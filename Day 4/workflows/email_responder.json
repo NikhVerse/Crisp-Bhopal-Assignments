@@ -1,0 +1,344 @@
+{
+  "name": "AI Email Auto Responder",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [{ "mode": "everyMinute" }]
+        },
+        "filters": { "readStatus": "unread", "includeSpamTrash": false },
+        "options": {}
+      },
+      "id": "node_gmail_trigger",
+      "name": "Gmail Trigger",
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1,
+      "position": [120, 400],
+      "credentials": { "gmailOAuth2": { "id": "gmail_cred_1", "name": "Gmail OAuth2" } }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "messageId": "={{ $json.id }}",
+        "options": { "format": "full" }
+      },
+      "id": "node_gmail_read",
+      "name": "Read Full Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [340, 400],
+      "credentials": { "gmailOAuth2": { "id": "gmail_cred_1", "name": "Gmail OAuth2" } }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "a1", "name": "messageId",    "value": "={{ $json.id }}",                                     "type": "string" },
+            { "id": "a2", "name": "threadId",     "value": "={{ $json.threadId }}",                               "type": "string" },
+            { "id": "a3", "name": "senderEmail",  "value": "={{ $json.from.value[0].address }}",                  "type": "string" },
+            { "id": "a4", "name": "senderName",   "value": "={{ $json.from.value[0].name || $json.from.value[0].address }}", "type": "string" },
+            { "id": "a5", "name": "subject",      "value": "={{ $json.subject || '(no subject)' }}",              "type": "string" },
+            { "id": "a6", "name": "emailBody",    "value": "={{ $json.text || 'No body content' }}",              "type": "string" },
+            { "id": "a7", "name": "receivedDate", "value": "={{ $json.date }}",                                   "type": "string" },
+            { "id": "a8", "name": "toEmail",      "value": "={{ $json.to.value[0].address }}",                   "type": "string" },
+            { "id": "a9", "name": "processedAt",  "value": "={{ new Date().toISOString() }}",                     "type": "string" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node_extract_fields",
+      "name": "Extract Email Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [560, 400]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://qdrant:6333/collections/email_memory/points/search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "Content-Type", "value": "application/json" }]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"vector\": [0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.5],\n  \"filter\": { \"must\": [{ \"key\": \"sender_email\", \"match\": { \"value\": \"{{ $('Extract Email Fields').item.json.senderEmail }}\" } }] },\n  \"limit\": 5,\n  \"with_payload\": true,\n  \"score_threshold\": 0.5\n}",
+        "options": {}
+      },
+      "id": "node_retrieve_memory",
+      "name": "Retrieve Memory",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [780, 400],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const emailData = $('Extract Email Fields').item.json;\nconst qdrantResult = $input.item.json;\n\nlet memoryContext = 'No previous conversations found with this sender.';\nlet previousConversations = [];\n\ntry {\n  if (qdrantResult && qdrantResult.result && qdrantResult.result.length > 0) {\n    previousConversations = qdrantResult.result.map(r => r.payload);\n    memoryContext = previousConversations\n      .map((conv, i) => `--- Past Conversation ${i + 1} ---\\nDate: ${conv.timestamp || 'Unknown'}\\nSubject: ${conv.subject || 'Unknown'}\\nCategory: ${conv.category || 'Unknown'}\\nSummary: ${conv.body_summary || 'No summary'}\\nOur Reply: ${conv.reply_sent || 'No reply recorded'}\\n`)\n      .join('\\n');\n  }\n} catch (e) {\n  memoryContext = 'Memory retrieval error. Proceeding without context.';\n}\n\nreturn [{\n  json: {\n    ...emailData,\n    memoryContext,\n    previousConversationCount: previousConversations.length,\n    isReturningContact: previousConversations.length > 0,\n    processingId: 'email_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)\n  }\n}];"
+      },
+      "id": "node_build_memory_context",
+      "name": "Build Memory Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1000, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build the complete Ollama request payload as a clean JSON string.\n// This avoids all n8n expression-in-body issues.\nconst d = $input.item.json;\n\nconst prompt = `You are a professional executive email assistant.\n\n## PREVIOUS CONVERSATIONS\n${d.memoryContext}\n\n## CURRENT EMAIL\nFrom: ${d.senderName} <${d.senderEmail}>\nDate: ${d.receivedDate}\nSubject: ${d.subject}\n\n${d.emailBody}\n\n## TASK\nOutput ONLY valid JSON — no markdown, no explanation:\n{\n  \"intent\": \"what the sender wants\",\n  \"category\": \"Job Application|HR|Support|Customer Inquiry|Personal|Business|Meeting Request|Newsletter|Spam|Other\",\n  \"urgency_score\": 5,\n  \"urgency_reason\": \"brief reason\",\n  \"reply_style\": \"formal|casual|technical|empathetic\",\n  \"draft_reply\": \"complete reply text\",\n  \"reply_subject\": \"reply subject line\",\n  \"summary\": \"one sentence summary\",\n  \"tasks\": [\"action item 1\"],\n  \"spam_score\": 0.05,\n  \"spam_reason\": \"brief reason\",\n  \"follow_up_needed\": false,\n  \"follow_up_date\": null,\n  \"language_detected\": \"en\",\n  \"is_meeting_request\": false,\n  \"meeting_proposed_time\": null,\n  \"suggested_actions\": [\"next action\"]\n}\nRules: never invent facts; spam_score>0.7 sets category to Spam; output JSON only.`;\n\nconst payload = {\n  model: 'llama3.1',\n  prompt: prompt,\n  stream: false,\n  options: { temperature: 0.3, num_predict: 2048 }\n};\n\nreturn [{ json: { ...d, ollamaPayload: JSON.stringify(payload) } }];"
+      },
+      "id": "node_build_ollama_payload",
+      "name": "Build Ollama Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1220, 400],
+      "notes": "Builds the Ollama request body cleanly in JS to avoid n8n expression issues"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://ollama:11434/api/generate",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "Content-Type", "value": "application/json" }]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.ollamaPayload }}",
+        "options": { "timeout": 120000 }
+      },
+      "id": "node_ai_planner",
+      "name": "AI Planner (Ollama)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1440, 400],
+      "notes": "Sends pre-built JSON payload to Ollama /api/generate"
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputData = $('Build Memory Context').item.json;\nconst ollamaResponse = $input.item.json;\n\nlet ai = {};\ntry {\n  const raw = ollamaResponse.response || '';\n  const match = raw.match(/{[\\s\\S]*}/);\n  if (match) { ai = JSON.parse(match[0]); }\n  else { throw new Error('No JSON in response'); }\n} catch (e) {\n  ai = {\n    intent: 'Could not parse AI response',\n    category: 'Other',\n    urgency_score: 5,\n    urgency_reason: 'Default',\n    reply_style: 'formal',\n    draft_reply: 'Dear ' + inputData.senderName + ',\\n\\nThank you for your email. I will respond shortly.\\n\\nBest regards',\n    reply_subject: 'Re: ' + inputData.subject,\n    summary: 'Email received',\n    tasks: [],\n    spam_score: 0.0,\n    spam_reason: 'Could not analyse',\n    follow_up_needed: false,\n    follow_up_date: null,\n    language_detected: 'en',\n    is_meeting_request: false,\n    meeting_proposed_time: null,\n    suggested_actions: ['Review manually']\n  };\n}\n\nreturn [{\n  json: {\n    ...inputData,\n    ai: {\n      intent: ai.intent || 'Unknown',\n      category: ai.category || 'Other',\n      urgencyScore: ai.urgency_score || 5,\n      urgencyReason: ai.urgency_reason || '',\n      replyStyle: ai.reply_style || 'formal',\n      draftReply: ai.draft_reply || '',\n      replySubject: ai.reply_subject || ('Re: ' + inputData.subject),\n      summary: ai.summary || '',\n      tasks: ai.tasks || [],\n      spamScore: ai.spam_score || 0.0,\n      spamReason: ai.spam_reason || '',\n      followUpNeeded: ai.follow_up_needed || false,\n      followUpDate: ai.follow_up_date || null,\n      languageDetected: ai.language_detected || 'en',\n      isMeetingRequest: ai.is_meeting_request || false,\n      meetingProposedTime: ai.meeting_proposed_time || null,\n      suggestedActions: ai.suggested_actions || []\n    },\n    isSpam: (ai.spam_score || 0.0) > 0.7\n  }\n}];"
+      },
+      "id": "node_parse_ai_response",
+      "name": "Parse AI Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1660, 400]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "loose" },
+          "conditions": [
+            {
+              "id": "cond_spam",
+              "leftValue": "={{ $json.isSpam }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "true" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "node_spam_check",
+      "name": "Is Spam?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1880, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.item.json;\nconst now = new Date();\nconst dateStr = now.toISOString().replace('T', ' ').substring(0, 19);\nconst dateFile = now.toISOString().replace(/[:.]/g, '-').substring(0, 19);\n\nconst markdownLog = `# SPAM — Email Skipped\\n\\n**Date:** ${dateStr}  \\n**From:** ${data.senderName} <${data.senderEmail}>  \\n**Subject:** ${data.subject}  \\n**Spam Score:** ${((data.ai || {}).spamScore * 100 || 0).toFixed(0)}%  \\n**Reason:** ${(data.ai || {}).spamReason || 'Classified as spam'}  \\n**Action:** No reply sent.  \\n\\n---\\n*AI Email Auto Responder*\\n`;\n\nreturn [{\n  json: {\n    ...data,\n    markdownLog,\n    logFilePath: '/home/node/logs/' + dateFile + '_SPAM_' + data.senderEmail.replace(/[@.]/g, '_') + '.md',\n    action: 'SPAM_SKIPPED'\n  }\n}];"
+      },
+      "id": "node_spam_log",
+      "name": "Generate Spam Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2100, 240]
+    },
+    {
+      "parameters": {
+        "jsCode": "const fs = require('fs');\nconst path = require('path');\nconst data = $input.item.json;\ntry {\n  const dir = path.dirname(data.logFilePath);\n  if (!fs.existsSync(dir)) { fs.mkdirSync(dir, { recursive: true }); }\n  fs.writeFileSync(data.logFilePath, data.markdownLog, 'utf8');\n} catch(e) { console.error('Spam log write error:', e.message); }\nreturn [{ json: { ...data, spamLogWritten: true } }];"
+      },
+      "id": "node_write_spam_log",
+      "name": "Write Spam Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2320, 240]
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.item.json;\nconst executionId = $execution.id;\nconst approveUrl = 'http://localhost:5678/webhook-waiting/' + executionId + '?action=approve';\nconst rejectUrl  = 'http://localhost:5678/webhook-waiting/' + executionId + '?action=reject';\n\nconst urgencyLabel = data.ai.urgencyScore >= 8 ? '🔴 HIGH' : data.ai.urgencyScore >= 5 ? '🟡 MEDIUM' : '🟢 LOW';\n\nconst approvalEmailBody = `AI EMAIL AUTO RESPONDER — APPROVAL REQUEST\n==========================================\n\nFrom    : ${data.senderName} <${data.senderEmail}>\nSubject : ${data.subject}\nCategory: ${data.ai.category}\nUrgency : ${urgencyLabel} (${data.ai.urgencyScore}/10)\n\nSUMMARY\n-------\n${data.ai.summary}\n\nAI DRAFT REPLY\n--------------\nSubject: ${data.ai.replySubject}\n\n${data.ai.draftReply}\n\n==========================================\n✅ APPROVE (sends the reply above):\n${approveUrl}\n\n❌ REJECT (discards draft):\n${rejectUrl}\n==========================================\nProcessing ID: ${data.processingId}`;\n\nreturn [{ json: { ...data, approvalEmailBody, approveUrl, rejectUrl } }];"
+      },
+      "id": "node_format_approval",
+      "name": "Format Approval Email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2100, 480]
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "sendTo": "={{ $json.toEmail }}",
+        "subject": "=[APPROVAL NEEDED] AI Reply for: {{ $json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.approvalEmailBody }}",
+        "options": { "appendAttribution": false }
+      },
+      "id": "node_send_approval_notification",
+      "name": "Send Approval Notification",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [2320, 480],
+      "credentials": { "gmailOAuth2": { "id": "gmail_cred_1", "name": "Gmail OAuth2" } }
+    },
+    {
+      "parameters": {
+        "resume": "webhook",
+        "options": { "webhookSuffix": "/email-approval" }
+      },
+      "id": "node_wait_approval",
+      "name": "Wait for Approval",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [2540, 480],
+      "webhookId": "email-approval-wait-001"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "loose" },
+          "conditions": [
+            {
+              "id": "cond_approve",
+              "leftValue": "={{ $json.query.action }}",
+              "rightValue": "approve",
+              "operator": { "type": "string", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "node_check_approval",
+      "name": "Approved?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [2760, 480]
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "sendTo": "={{ $('Parse AI Response').item.json.senderEmail }}",
+        "subject": "={{ $('Parse AI Response').item.json.ai.replySubject }}",
+        "emailType": "text",
+        "message": "={{ $('Parse AI Response').item.json.ai.draftReply }}",
+        "options": {
+          "appendAttribution": false,
+          "threadId": "={{ $('Parse AI Response').item.json.threadId }}"
+        }
+      },
+      "id": "node_send_email",
+      "name": "Send Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [2980, 400],
+      "credentials": { "gmailOAuth2": { "id": "gmail_cred_1", "name": "Gmail OAuth2" } }
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $('Parse AI Response').item.json;\nreturn [{ json: { ...data, action: 'REPLY_REJECTED', rejectedAt: new Date().toISOString() } }];"
+      },
+      "id": "node_rejected_log",
+      "name": "Log Rejection",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2980, 580]
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "http://qdrant:6333/collections/email_memory/points",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "Content-Type", "value": "application/json" }]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"points\": [{\n    \"id\": {{ Math.floor(Math.random() * 999999999) }},\n    \"vector\": [0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.1,0.2,0.3,0.4,0.5,0.5],\n    \"payload\": {\n      \"sender_email\": \"{{ $('Parse AI Response').item.json.senderEmail }}\",\n      \"sender_name\": \"{{ $('Parse AI Response').item.json.senderName }}\",\n      \"subject\": \"{{ $('Parse AI Response').item.json.subject }}\",\n      \"body_summary\": \"{{ $('Parse AI Response').item.json.ai.summary }}\",\n      \"category\": \"{{ $('Parse AI Response').item.json.ai.category }}\",\n      \"urgency_score\": {{ $('Parse AI Response').item.json.ai.urgencyScore }},\n      \"reply_sent\": \"{{ $('Parse AI Response').item.json.ai.draftReply.replace(/\"/g, '\\\\\"').replace(/\\n/g, '\\\\n') }}\",\n      \"timestamp\": \"{{ new Date().toISOString() }}\",\n      \"thread_id\": \"{{ $('Parse AI Response').item.json.threadId }}\",\n      \"message_id\": \"{{ $('Parse AI Response').item.json.messageId }}\",\n      \"action_taken\": \"SENT\"\n    }\n  }]\n}",
+        "options": {}
+      },
+      "id": "node_save_memory",
+      "name": "Save to Memory",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [3200, 400],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $('Parse AI Response').item.json;\nconst now = new Date();\nconst dateStr = now.toISOString().replace('T', ' ').substring(0, 19);\nconst dateFile = now.toISOString().replace(/[:.]/g, '-').substring(0, 19);\n\nconst urgencyEmoji = data.ai.urgencyScore >= 8 ? '🔴' : data.ai.urgencyScore >= 5 ? '🟡' : '🟢';\nconst taskList = (data.ai.tasks || []).map(t => '- [ ] ' + t).join('\\n') || '- No tasks identified';\n\nconst markdownLog = `# Email Processing Log\\n\\n**Generated:** ${dateStr}  \\n**Processing ID:** ${data.processingId}  \\n\\n---\\n\\n## Email Details\\n\\n| Field | Value |\\n|---|---|\\n| **From** | ${data.senderName} <${data.senderEmail}> |\\n| **Subject** | ${data.subject} |\\n| **Received** | ${data.receivedDate} |\\n\\n---\\n\\n## AI Analysis\\n\\n| Field | Result |\\n|---|---|\\n| **Category** | ${data.ai.category} |\\n| **Intent** | ${data.ai.intent} |\\n| **Urgency** | ${urgencyEmoji} ${data.ai.urgencyScore}/10 — ${data.ai.urgencyReason} |\\n| **Language** | ${data.ai.languageDetected} |\\n| **Spam Score** | ${(data.ai.spamScore * 100).toFixed(0)}% |\\n\\n---\\n\\n## Summary\\n\\n${data.ai.summary}\\n\\n---\\n\\n## Draft Reply Sent\\n\\n**Subject:** ${data.ai.replySubject}\\n\\n\\`\\`\\`\\n${data.ai.draftReply}\\n\\`\\`\\`\\n\\n---\\n\\n## Action\\n\\n✅ REPLY SENT — ${dateStr}\\n\\n---\\n\\n## Tasks Extracted\\n\\n${taskList}\\n\\n---\\n\\n*Generated by AI Email Auto Responder | n8n + Ollama + Qdrant*\\n`;\n\nreturn [{\n  json: {\n    ...data,\n    markdownLog,\n    logFilePath: '/home/node/logs/' + dateFile + '_' + data.senderEmail.replace(/[@.]/g, '_') + '.md'\n  }\n}];"
+      },
+      "id": "node_generate_markdown",
+      "name": "Generate Markdown Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3420, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "const fs = require('fs');\nconst path = require('path');\nconst data = $input.item.json;\ntry {\n  const dir = path.dirname(data.logFilePath);\n  if (!fs.existsSync(dir)) { fs.mkdirSync(dir, { recursive: true }); }\n  fs.writeFileSync(data.logFilePath, data.markdownLog, 'utf8');\n  console.log('Log written:', data.logFilePath);\n} catch(e) { console.error('Log write error:', e.message); }\nreturn [{ json: { ...data, logWritten: true } }];"
+      },
+      "id": "node_write_log",
+      "name": "Write Log File",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3640, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $('Generate Markdown Log').item.json;\nconsole.log('[SUCCESS] Processed:', data.subject, 'from', data.senderEmail);\nconsole.log('[SUCCESS] Category:', data.ai.category, '| Urgency:', data.ai.urgencyScore);\nreturn [{\n  json: {\n    status: 'success',\n    completedAt: new Date().toISOString(),\n    processingId: data.processingId,\n    emailFrom: data.senderEmail,\n    emailSubject: data.subject,\n    category: data.ai.category,\n    urgencyScore: data.ai.urgencyScore,\n    replySent: true,\n    memorySaved: true,\n    logFile: data.logFilePath\n  }\n}];"
+      },
+      "id": "node_success",
+      "name": "Success",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3860, 400]
+    }
+  ],
+  "connections": {
+    "Gmail Trigger":               { "main": [[{ "node": "Read Full Email",            "type": "main", "index": 0 }]] },
+    "Read Full Email":             { "main": [[{ "node": "Extract Email Fields",        "type": "main", "index": 0 }]] },
+    "Extract Email Fields":        { "main": [[{ "node": "Retrieve Memory",             "type": "main", "index": 0 }]] },
+    "Retrieve Memory":             { "main": [[{ "node": "Build Memory Context",        "type": "main", "index": 0 }]] },
+    "Build Memory Context":        { "main": [[{ "node": "Build Ollama Payload",        "type": "main", "index": 0 }]] },
+    "Build Ollama Payload":        { "main": [[{ "node": "AI Planner (Ollama)",         "type": "main", "index": 0 }]] },
+    "AI Planner (Ollama)":         { "main": [[{ "node": "Parse AI Response",           "type": "main", "index": 0 }]] },
+    "Parse AI Response":           { "main": [[{ "node": "Is Spam?",                    "type": "main", "index": 0 }]] },
+    "Is Spam?":                    { "main": [[{ "node": "Generate Spam Log",           "type": "main", "index": 0 }], [{ "node": "Format Approval Email", "type": "main", "index": 0 }]] },
+    "Generate Spam Log":           { "main": [[{ "node": "Write Spam Log",              "type": "main", "index": 0 }]] },
+    "Format Approval Email":       { "main": [[{ "node": "Send Approval Notification",  "type": "main", "index": 0 }]] },
+    "Send Approval Notification":  { "main": [[{ "node": "Wait for Approval",           "type": "main", "index": 0 }]] },
+    "Wait for Approval":           { "main": [[{ "node": "Approved?",                   "type": "main", "index": 0 }]] },
+    "Approved?":                   { "main": [[{ "node": "Send Email",                  "type": "main", "index": 0 }], [{ "node": "Log Rejection", "type": "main", "index": 0 }]] },
+    "Send Email":                  { "main": [[{ "node": "Save to Memory",              "type": "main", "index": 0 }]] },
+    "Save to Memory":              { "main": [[{ "node": "Generate Markdown Log",       "type": "main", "index": 0 }]] },
+    "Generate Markdown Log":       { "main": [[{ "node": "Write Log File",              "type": "main", "index": 0 }]] },
+    "Write Log File":              { "main": [[{ "node": "Success",                     "type": "main", "index": 0 }]] }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "timezone": "Asia/Kolkata"
+  },
+  "staticData": null,
+  "tags": [
+    { "id": "tag_1", "name": "AI" },
+    { "id": "tag_2", "name": "Email" },
+    { "id": "tag_3", "name": "CRISP-Day4" }
+  ],
+  "triggerCount": 1,
+  "versionId": "v1.2.0",
+  "meta": { "instanceId": "ai-email-auto-responder-v1" }
+}

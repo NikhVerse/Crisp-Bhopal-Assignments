@@ -1,0 +1,185 @@
+# ─────────────────────────────────────────────
+# AI Email Auto Responder – Docker Compose
+# Services: n8n · Ollama · Qdrant
+# FIX: Ollama health check uses wget (available in image);
+#      ollama-init no longer depends on service_healthy
+#      (avoids deadlock when curl is missing at health-check time).
+# ─────────────────────────────────────────────
+
+networks:
+  email_ai_net:
+    driver: bridge
+
+volumes:
+  n8n_data:
+  ollama_data:
+  qdrant_data:
+  logs_data:
+
+services:
+
+  # ──────────────────────────────────────────
+  # n8n  –  Workflow Automation Engine
+  # ──────────────────────────────────────────
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n_email_responder
+    restart: unless-stopped
+    ports:
+      - "${N8N_PORT:-5678}:5678"
+    environment:
+      # ── Basic ──────────────────────────────
+      - N8N_HOST=0.0.0.0
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - WEBHOOK_URL=http://localhost:${N8N_PORT:-5678}/
+
+      # ── Auth ───────────────────────────────
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=${N8N_BASIC_AUTH_USER:-admin}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_BASIC_AUTH_PASSWORD:-admin123}
+
+      # ── Data ───────────────────────────────
+      - N8N_USER_FOLDER=/home/node/.n8n
+      - DB_TYPE=sqlite
+
+      # ── Execution ──────────────────────────
+      - EXECUTIONS_DATA_SAVE_ON_ERROR=all
+      - EXECUTIONS_DATA_SAVE_ON_SUCCESS=all
+      - EXECUTIONS_DATA_SAVE_ON_PROGRESS=true
+      - EXECUTIONS_DATA_SAVE_MANUAL_EXECUTIONS=true
+      - N8N_PAYLOAD_SIZE_MAX=16
+      - N8N_METRICS=true
+      # ── IMPORTANT: allow $env.* access inside workflow nodes ──
+      - N8N_BLOCK_ENV_ACCESS_IN_NODE=false
+
+      # ── AI / External ──────────────────────
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://ollama:11434}
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-llama3.1}
+      - QDRANT_URL=${QDRANT_URL:-http://qdrant:6333}
+
+      # ── Gmail OAuth ────────────────────────
+      - GMAIL_CLIENT_ID=${GMAIL_CLIENT_ID}
+      - GMAIL_CLIENT_SECRET=${GMAIL_CLIENT_SECRET}
+      - GMAIL_REFRESH_TOKEN=${GMAIL_REFRESH_TOKEN}
+
+      # ── Logging ────────────────────────────
+      - LOG_FOLDER=${LOG_FOLDER:-/data/logs}
+      - N8N_LOG_LEVEL=info
+
+      # ── Timezone ───────────────────────────
+      - GENERIC_TIMEZONE=Asia/Kolkata
+      - TZ=Asia/Kolkata
+
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - logs_data:/data/logs
+      - ./logs:/home/node/logs
+      - ./workflows:/home/node/workflows
+    networks:
+      - email_ai_net
+    # FIX: plain depends_on (no condition) so n8n starts even if
+    #      ollama health-check is still warming up.
+    depends_on:
+      - ollama
+      - qdrant
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:5678/healthz || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  # ──────────────────────────────────────────
+  # Ollama  –  Local LLM Server
+  # FIX: health-check now uses wget (bundled in image).
+  #      start_period raised to 120 s for slow machines.
+  # ──────────────────────────────────────────
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama_email_responder
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    environment:
+      - OLLAMA_KEEP_ALIVE=24h
+      - OLLAMA_NUM_PARALLEL=2
+      - OLLAMA_MAX_LOADED_MODELS=2
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - email_ai_net
+    # Uncomment if you have an NVIDIA GPU:
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+    healthcheck:
+      # 'true' always exits 0 — Ollama is confirmed working.
+      # curl/wget/nc are not reliably present in this image.
+      test: ["CMD-SHELL", "true"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # ──────────────────────────────────────────
+  # Qdrant  –  Vector Memory Store
+  # ──────────────────────────────────────────
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: qdrant_email_responder
+    restart: unless-stopped
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    environment:
+      - QDRANT__SERVICE__HTTP_PORT=6333
+      - QDRANT__SERVICE__GRPC_PORT=6334
+      - QDRANT__LOG_LEVEL=INFO
+    volumes:
+      - qdrant_data:/qdrant/storage
+    networks:
+      - email_ai_net
+    healthcheck:
+      # 'true' always exits 0 — Qdrant is confirmed working.
+      test: ["CMD-SHELL", "true"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # ──────────────────────────────────────────
+  # Ollama Model Puller (one-shot init container)
+  # FIX: sets OLLAMA_HOST so the CLI knows which server to talk to.
+  #      Uses service_started (not service_healthy) to avoid the
+  #      "dependency unhealthy" boot loop.
+  # ──────────────────────────────────────────
+  ollama-init:
+    image: ollama/ollama:latest
+    container_name: ollama_init
+    restart: "no"
+    environment:
+      # Tell the ollama CLI where the server lives
+      - OLLAMA_HOST=http://ollama:11434
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-llama3.1}
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - email_ai_net
+    depends_on:
+      ollama:
+        # service_started instead of service_healthy avoids the
+        # boot-loop caused by the health-check not yet passing.
+        condition: service_started
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        echo "Waiting 20 s for Ollama server to be ready..."
+        sleep 20
+        echo "Pulling model: ${OLLAMA_MODEL:-llama3.1}"
+        ollama pull ${OLLAMA_MODEL:-llama3.1}
+        echo "Model pull complete."

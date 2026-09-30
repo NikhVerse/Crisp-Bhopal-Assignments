@@ -1,0 +1,88 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# AI Email Auto Responder — .gitignore
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── Secrets / Environment ─────────────────────────────────────────────────────
+.env
+*.env
+*.secret
+credentials.json
+token.json
+
+# ── Logs & Generated Data ─────────────────────────────────────────────────────
+logs/*.log
+logs/*.md
+logs/*.json
+logs/*.txt
+!logs/.gitkeep
+
+# ── Screenshots (add manually) ────────────────────────────────────────────────
+screenshots/*.png
+screenshots/*.jpg
+screenshots/*.jpeg
+screenshots/*.gif
+!screenshots/.gitkeep
+
+# ── Docker ────────────────────────────────────────────────────────────────────
+docker-compose.override.yml
+.docker/
+
+# ── n8n local data ────────────────────────────────────────────────────────────
+.n8n/
+n8n_data/
+
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+*.egg-info/
+dist/
+build/
+*.egg
+
+# ── OS Generated ──────────────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ── IDE / Editor ──────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# ── Node ──────────────────────────────────────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ── Temporary ─────────────────────────────────────────────────────────────────
+tmp/
+temp/
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# ── Qdrant local storage (if mounted) ─────────────────────────────────────────
+qdrant_storage/
+
+# ── Ollama models (large, don't commit) ───────────────────────────────────────
+ollama_models/

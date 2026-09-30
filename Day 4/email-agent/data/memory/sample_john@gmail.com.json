@@ -1,0 +1,13 @@
+{
+  "sender": "john@gmail.com",
+  "subject_history": [
+    "Question about pricing",
+    "Request for demo"
+  ],
+  "last_interaction": "Inquired about enterprise demo availability for next week.",
+  "reply_history": [
+    "Hi John, Thanks for reaching out. We have demos scheduled for Tuesday and Thursday. Let us know which day works best.",
+    "Sure John, here is the link to book the demo."
+  ],
+  "timestamp": "2026-07-26T15:30:00Z"
+}

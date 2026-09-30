@@ -1,0 +1,29 @@
+# Screenshots Directory
+
+Add your project screenshots here after running the project.
+
+## Required Screenshots
+
+| Filename | What to Capture |
+|---|---|
+| `docker_desktop.png` | Docker Desktop showing all containers running |
+| `containers_running.png` | Terminal output of `docker compose ps` |
+| `n8n_dashboard.png` | n8n workflow dashboard/home screen |
+| `workflow_canvas.png` | Full workflow canvas (zoom out to show all nodes) |
+| `planner_node.png` | AI Planner node configuration and output |
+| `memory_node.png` | Qdrant memory retrieval node |
+| `gmail_trigger.png` | Gmail Trigger node settings |
+| `ai_reply.png` | AI-generated reply in the execution log |
+| `approval_node.png` | Approval webhook node waiting for input |
+| `email_sent.png` | Successful email sent confirmation |
+| `logs_folder.png` | Generated markdown logs in the logs/ folder |
+| `qdrant_dashboard.png` | Qdrant dashboard showing stored vectors |
+
+## How to Take Screenshots
+
+1. Start all services: `docker compose up -d`
+2. Open n8n at http://localhost:5678
+3. Import the workflow from `workflows/email_responder.json`
+4. Activate the workflow
+5. Send a test email to your Gmail inbox
+6. Watch the workflow execute and capture each step

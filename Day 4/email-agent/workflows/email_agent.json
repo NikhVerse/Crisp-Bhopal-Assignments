@@ -1,0 +1,738 @@
+{
+  "name": "AI Email Approval Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {
+          "readStatus": "unread",
+          "includeSpamTrash": false
+        },
+        "options": {}
+      },
+      "id": "node_gmail_trigger",
+      "name": "Gmail Trigger",
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1,
+      "position": [100, 400],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "gmail_cred_1",
+          "name": "Gmail OAuth2"
+        }
+      },
+      "notes": "Polls Gmail for unread emails every minute"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "messageId": "={{ $json.id }}",
+        "options": {
+          "format": "full"
+        }
+      },
+      "id": "node_gmail_read",
+      "name": "Read Full Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [300, 400],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "gmail_cred_1",
+          "name": "Gmail OAuth2"
+        }
+      },
+      "notes": "Retrieves the full content of the email"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "messageId",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "a2",
+              "name": "threadId",
+              "value": "={{ $json.threadId }}",
+              "type": "string"
+            },
+            {
+              "id": "a3",
+              "name": "senderEmail",
+              "value": "={{ $json.from.value[0].address }}",
+              "type": "string"
+            },
+            {
+              "id": "a4",
+              "name": "senderName",
+              "value": "={{ $json.from.value[0].name || $json.from.value[0].address }}",
+              "type": "string"
+            },
+            {
+              "id": "a5",
+              "name": "subject",
+              "value": "={{ $json.subject || '(no subject)' }}",
+              "type": "string"
+            },
+            {
+              "id": "a6",
+              "name": "emailBody",
+              "value": "={{ $json.text || 'No body content' }}",
+              "type": "string"
+            },
+            {
+              "id": "a7",
+              "name": "receivedDate",
+              "value": "={{ $json.date }}",
+              "type": "string"
+            },
+            {
+              "id": "a8",
+              "name": "toEmail",
+              "value": "={{ $json.to.value[0].address }}",
+              "type": "string"
+            },
+            {
+              "id": "a9",
+              "name": "processedAt",
+              "value": "={{ new Date().toISOString() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node_extract_fields",
+      "name": "Extract Email Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [500, 400],
+      "notes": "Extracts and cleans essential email headers and body"
+    },
+    {
+      "parameters": {
+        "jsCode": "const fs = require('fs');\nconst email = $input.item.json.senderEmail;\nconst memoryPath = `/home/node/data/memory/${email}.json`;\n\nlet memory = {\n  sender: email,\n  subject_history: [],\n  last_interaction: \"No previous interactions.\",\n  reply_history: [],\n  timestamp: \"\"\n};\n\ntry {\n  if (fs.existsSync(memoryPath)) {\n    const content = fs.readFileSync(memoryPath, 'utf8');\n    memory = JSON.parse(content);\n  }\n} catch (err) {\n  console.error('Error reading memory file:', err);\n}\n\nreturn [{ json: { ...$input.item.json, memory } }];"
+      },
+      "id": "node_retrieve_memory",
+      "name": "Retrieve Memory",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [700, 400],
+      "notes": "Reads JSON-based interaction history from data/memory/"
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $input.item.json;\nconst memory = d.memory;\n\nlet context = `Sender: ${d.senderName} <${d.senderEmail}>\\n`;\nif (memory.subject_history && memory.subject_history.length > 0) {\n  context += `Subject History:\\n${memory.subject_history.map(s => `- ${s}`).join('\\n')}\\n`;\n  context += `Last Interaction: ${memory.last_interaction}\\n`;\n  context += `Last Reply History:\\n${memory.reply_history.map(r => `- ${r}`).join('\\n')}\\n`;\n} else {\n  context += `No previous conversation history found. This is a first-time contact.\\n`;\n}\n\nreturn [{ json: { ...d, memoryContext: context } }];"
+      },
+      "id": "node_build_memory_context",
+      "name": "Build Memory Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 400],
+      "notes": "Formats memory history into prompt text context"
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $input.item.json;\nconst prompt = `You are an advanced AI Email Approval Agent. Your task is to analyze the following email, look at the past interaction memory, and decide on the next actions.\n\n## PAST MEMORY CONTEXT\n${d.memoryContext}\n\n## CURRENT EMAIL\nFrom: ${d.senderName} <${d.senderEmail}>\nSubject: ${d.subject}\nReceived: ${d.receivedDate}\n\nBody:\n${d.emailBody}\n\n## INSTRUCTIONS\nClassify this email into one of these categories:\n1. \"spam\" - If the email is unsolicited commercial email, spam, phishing, newsletter, or automatic system notification.\n2. \"auto_reply\" - If the email is a routine inquiry (e.g. greeting, confirmation, basic question, simple request) that can be replied to automatically without risk.\n3. \"approval\" - If the email is a complex business proposal, job application, high-urgency issue, meeting schedule request, support issue, or requires human judgment.\n\nYou MUST return ONLY a valid JSON object. No markdown, no conversational text, no explanation.\n\nJSON Format:\n{\n  \"category\": \"spam|auto_reply|approval\",\n  \"confidence\": 95,\n  \"reply_required\": true,\n  \"approval_required\": true,\n  \"reply\": \"Draft a professional reply text here. Keep it empty for spam.\",\n  \"urgency_score\": 5,\n  \"urgency_reason\": \"Brief reason for urgency score (1-10)\",\n  \"priority\": \"high|medium|low\",\n  \"sentiment\": \"positive|neutral|negative\",\n  \"summary\": \"One sentence summary of the email\",\n  \"follow_up_suggestion\": \"Suggested next follow-up action\"\n}`;\n\nconst payload = {\n  model: 'llama3.2',\n  prompt: prompt,\n  stream: false,\n  options: {\n    temperature: 0.2\n  }\n};\n\nreturn [{ json: { ...d, ollamaPayload: JSON.stringify(payload) } }];"
+      },
+      "id": "node_build_ollama_payload",
+      "name": "Build Ollama Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1100, 400],
+      "notes": "Builds the Ollama API JSON payload string cleanly in JavaScript"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://ollama:11434/api/generate",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.ollamaPayload }}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "node_ai_planner",
+      "name": "AI Planner (Ollama)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1300, 400],
+      "notes": "Calls local Ollama API to process the email using Llama 3.2"
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $('Build Ollama Payload').item.json;\nconst ollamaResponse = $input.item.json;\n\nlet ai = {};\ntry {\n  const raw = ollamaResponse.response || '';\n  const match = raw.match(/{[\\s\\S]*}/);\n  if (match) {\n    ai = JSON.parse(match[0]);\n  } else {\n    throw new Error('No JSON object found in Ollama response');\n  }\n} catch (e) {\n  console.error('Failed to parse AI response:', e.message);\n  ai = {\n    category: \"approval\",\n    confidence: 50,\n    reply_required: true,\n    approval_required: true,\n    reply: `Dear ${d.senderName},\\n\\nThank you for reaching out. We have received your email regarding \"${d.subject}\" and will review it shortly.\\n\\nBest regards,\\nNikhil`,\n    urgency_score: 5,\n    urgency_reason: \"Ollama parse failure, defaulting to human review\",\n    priority: \"medium\",\n    sentiment: \"neutral\",\n    summary: \"Ollama parsing failed, fallback manual review triggered\",\n    follow_up_suggestion: \"Manual validation of AI parser logs\"\n  };\n}\n\nreturn [{\n  json: {\n    ...d,\n    ai: {\n      category: ai.category || 'approval',\n      confidence: ai.confidence || 50,\n      reply_required: ai.reply_required !== undefined ? ai.reply_required : true,\n      approval_required: ai.approval_required !== undefined ? ai.approval_required : true,\n      reply: ai.reply || '',\n      urgency_score: ai.urgency_score || 5,\n      urgency_reason: ai.urgency_reason || 'N/A',\n      priority: ai.priority || 'medium',\n      sentiment: ai.sentiment || 'neutral',\n      summary: ai.summary || 'No summary generated.',\n      follow_up_suggestion: ai.follow_up_suggestion || 'No follow-up action proposed.'\n    }\n  }\n}];"
+      },
+      "id": "node_parse_ai_response",
+      "name": "Parse AI Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1500, 400],
+      "notes": "Extracts JSON object from Ollama with robust fallback configuration"
+    },
+    {
+      "parameters": {
+        "dataType": "string",
+        "value1": "={{ $json.ai.category }}",
+        "rules": {
+          "rules": [
+            {
+              "value2": "spam"
+            },
+            {
+              "value2": "auto_reply",
+              "output": 1
+            },
+            {
+              "value2": "approval",
+              "output": 2
+            }
+          ]
+        }
+      },
+      "id": "node_decision_switch",
+      "name": "Decision Switch",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [1750, 400],
+      "notes": "Routes execution path based on AI-determined category"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.item.json;\nconst now = new Date();\nconst dateStr = now.toISOString().replace('T', ' ').substring(0, 19);\nconst dateFile = now.toISOString().replace(/[:.]/g, '-').substring(0, 19);\n\nconst markdownLog = `# SPAM DETECTED — Email Ignored\\n\\n**Date:** ${dateStr}  \\n**From:** ${data.senderName} <${data.senderEmail}>  \\n**Subject:** ${data.subject}  \\n**AI Category:** ${data.ai.category}  \\n**Confidence:** ${data.ai.confidence}%  \\n**Urgency:** ${data.ai.urgency_score}/10 (${data.ai.urgency_reason})  \\n**Priority:** ${data.ai.priority}  \\n**Sentiment:** ${data.ai.sentiment}  \\n**Summary:** ${data.ai.summary}  \\n\\n---\\n## Email Body\\n\\n\\`\\`\\`\\n${data.emailBody}\\n\\`\\`\\`\\n\\n---\\n*AI Email Approval Agent — Spam Report*\\n`;\n\nreturn [{\n  json: {\n    ...data,\n    markdownLog,\n    logFilePath: `/home/node/logs/spam/spam-${dateFile}.md` \n  }\n}];"
+      },
+      "id": "node_gen_spam_markdown",
+      "name": "Generate Spam Markdown",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2000, 200],
+      "notes": "Constructs the markdown file contents for spam classification"
+    },
+    {
+      "parameters": {
+        "jsCode": "const fs = require('fs');\nconst path = require('path');\nconst data = $input.item.json;\n\ntry {\n  const dir = path.dirname(data.logFilePath);\n  if (!fs.existsSync(dir)) { fs.mkdirSync(dir, { recursive: true }); }\n  fs.writeFileSync(data.logFilePath, data.markdownLog, 'utf8');\n} catch (err) {\n  console.error('Failed to save spam log:', err.message);\n}\n\nreturn [{ json: { ...data, spamLogSaved: true } }];"
+      },
+      "id": "node_save_spam_log",
+      "name": "Save Spam Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2200, 200],
+      "notes": "Writes the spam markdown report to logs/spam/"
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "sendTo": "={{ $json.senderEmail }}",
+        "subject": "=Re: {{ $json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.ai.reply }}",
+        "options": {
+          "appendAttribution": false,
+          "threadId": "={{ $json.threadId }}"
+        }
+      },
+      "id": "node_send_auto_reply",
+      "name": "Send Gmail Reply (Auto)",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [2000, 400],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "gmail_cred_1",
+          "name": "Gmail OAuth2"
+        }
+      },
+      "notes": "Sends the AI-generated reply automatically without human intervention"
+    },
+    {
+      "parameters": {
+        "jsCode": "const fs = require('fs');\nconst path = require('path');\nconst data = $input.item.json;\n\nconst email = data.senderEmail;\nconst memoryPath = `/home/node/data/memory/${email}.json`;\n\nlet memory = data.memory;\nmemory.subject_history.push(data.subject);\nmemory.last_interaction = data.ai.summary;\nmemory.reply_history.push(data.ai.reply);\nmemory.timestamp = new Date().toISOString();\n\ntry {\n  const dir = path.dirname(memoryPath);\n  if (!fs.existsSync(dir)) { fs.mkdirSync(dir, { recursive: true }); }\n  fs.writeFileSync(memoryPath, JSON.stringify(memory, null, 2), 'utf8');\n} catch (err) {\n  console.error('Failed to save memory:', err.message);\n}\n\nreturn [{ json: { ...data, memorySaved: true, memory } }];"
+      },
+      "id": "node_save_memory_auto",
+      "name": "Save Memory (Auto)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2200, 400],
+      "notes": "Updates JSON interaction memory in data/memory/"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.item.json;\nconst now = new Date();\nconst dateStr = now.toISOString().replace('T', ' ').substring(0, 19);\nconst dateFile = now.toISOString().replace(/[:.]/g, '-').substring(0, 19);\n\nconst markdownLog = `# Email Auto-Reply Log\\n\\n**Date:** ${dateStr}  \\n**From:** ${data.senderName} <${data.senderEmail}>  \\n**Subject:** ${data.subject}  \\n**AI Category:** ${data.ai.category}  \\n**Confidence:** ${data.ai.confidence}%  \\n**Urgency:** ${data.ai.urgency_score}/10 (${data.ai.urgency_reason})  \\n**Priority:** ${data.ai.priority}  \\n**Sentiment:** ${data.ai.sentiment}  \\n**Summary:** ${data.ai.summary}  \\n**Follow-up Suggestion:** ${data.ai.follow_up_suggestion}  \\n\\n---\\n## Email Body\\n\\n\\`\\`\\`\\n${data.emailBody}\\n\\`\\`\\`\\n\\n---\\n## Auto-Reply Sent\\n\\n\\`\\`\\`\\n${data.ai.reply}\\n\\`\\`\\`\\n\\n---\\n*AI Email Approval Agent — Processing Report*\\n`;\n\nreturn [{\n  json: {\n    ...data,\n    markdownLog,\n    logFilePath: `/home/node/logs/${dateFile}.md`\n  }\n}];"
+      },
+      "id": "node_gen_markdown_auto",
+      "name": "Generate Markdown (Auto)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2400, 400],
+      "notes": "Builds the markdown log contents for auto-reply execution"
+    },
+    {
+      "parameters": {
+        "jsCode": "const fs = require('fs');\nconst path = require('path');\nconst data = $input.item.json;\n\ntry {\n  const dir = path.dirname(data.logFilePath);\n  if (!fs.existsSync(dir)) { fs.mkdirSync(dir, { recursive: true }); }\n  fs.writeFileSync(data.logFilePath, data.markdownLog, 'utf8');\n} catch (err) {\n  console.error('Failed to save auto log:', err.message);\n}\n\nreturn [{ json: { ...data, logSaved: true } }];"
+      },
+      "id": "node_save_log_auto",
+      "name": "Save Reply Log (Auto)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2600, 400],
+      "notes": "Writes processing markdown log file to logs/"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.item.json;\nconst executionId = $execution.id;\nconst approveUrl = 'http://localhost:5679/webhook-waiting/' + executionId + '?action=approve';\nconst rejectUrl  = 'http://localhost:5679/webhook-waiting/' + executionId + '?action=reject';\n\nconst urgencyEmoji = data.ai.urgency_score >= 8 ? '🔴 HIGH' : data.ai.urgency_score >= 5 ? '🟡 MEDIUM' : '🟢 LOW';\n\nconst approvalEmailBody = `AI EMAIL APPROVAL AGENT — MANUAL APPROVAL REQUIRED\\n======================================================\\n\\nFrom    : ${data.senderName} <${data.senderEmail}>\\nSubject : ${data.subject}\\nCategory: ${data.ai.category}\\nUrgency : ${urgencyEmoji} (${data.ai.urgency_score}/10 — ${data.ai.urgency_reason})\\nPriority: ${data.ai.priority.toUpperCase()}\\nSentiment: ${data.ai.sentiment.toUpperCase()}\\n\\nSUMMARY\\n-------\\n${data.ai.summary}\\n\\nSUGGESTED FOLLOW-UP\\n--------------------\\n${data.ai.follow_up_suggestion}\\n\\nAI DRAFT REPLY\\n--------------\\nSubject: Re: ${data.subject}\\n\\n${data.ai.reply}\\n\\n======================================================\\n✅ APPROVE — click to send the draft reply:\\n${approveUrl}\\n\\n❌ REJECT — click to discard the draft reply:\\n${rejectUrl}\\n======================================================\\nProcessing ID: ${data.processingId || 'N/A'}`;\n\nreturn [{\n  json: {\n    ...data,\n    approvalEmailBody,\n    approveUrl,\n    rejectUrl\n  }\n}];"
+      },
+      "id": "node_format_approval",
+      "name": "Format Approval Email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2000, 600],
+      "notes": "Formats the manual review notification email with Approve and Reject webhook links"
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "sendTo": "={{ $env.ADMIN_EMAIL }}",
+        "subject": "=[APPROVAL REQUIRED] AI Draft Reply for: {{ $json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.approvalEmailBody }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "node_send_approval_notification",
+      "name": "Send Approval Notification",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [2200, 600],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "gmail_cred_1",
+          "name": "Gmail OAuth2"
+        }
+      },
+      "notes": "Sends the review notification to the admin/reviewer inbox"
+    },
+    {
+      "parameters": {
+        "resume": "webhook",
+        "options": {
+          "webhookSuffix": "/email-agent-approval"
+        }
+      },
+      "id": "node_wait_approval",
+      "name": "Wait for Approval",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [2400, 600],
+      "webhookId": "email-agent-approval-wait-001",
+      "notes": "Pauses n8n execution waiting for Webhook click"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "cond_approve",
+              "leftValue": "={{ $json.query.action }}",
+              "rightValue": "approve",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "node_check_approval",
+      "name": "Approved?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [2600, 600],
+      "notes": "Routes based on Webhook query parameter action=approve"
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "sendTo": "={{ $('Parse AI Response').item.json.senderEmail }}",
+        "subject": "=Re: {{ $('Parse AI Response').item.json.subject }}",
+        "emailType": "text",
+        "message": "={{ $('Parse AI Response').item.json.ai.reply }}",
+        "options": {
+          "appendAttribution": false,
+          "threadId": "={{ $('Parse AI Response').item.json.threadId }}"
+        }
+      },
+      "id": "node_send_approved_reply",
+      "name": "Send Gmail Reply (Approved)",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [2850, 520],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "gmail_cred_1",
+          "name": "Gmail OAuth2"
+        }
+      },
+      "notes": "Sends the approved AI draft reply"
+    },
+    {
+      "parameters": {
+        "jsCode": "const fs = require('fs');\nconst path = require('path');\nconst data = $('Parse AI Response').item.json;\n\nconst email = data.senderEmail;\nconst memoryPath = `/home/node/data/memory/${email}.json`;\n\nlet memory = data.memory;\nmemory.subject_history.push(data.subject);\nmemory.last_interaction = data.ai.summary;\nmemory.reply_history.push(data.ai.reply);\nmemory.timestamp = new Date().toISOString();\n\ntry {\n  const dir = path.dirname(memoryPath);\n  if (!fs.existsSync(dir)) { fs.mkdirSync(dir, { recursive: true }); }\n  fs.writeFileSync(memoryPath, JSON.stringify(memory, null, 2), 'utf8');\n} catch (err) {\n  console.error('Failed to save memory:', err.message);\n}\n\nreturn [{ json: { ...data, memorySaved: true, memory } }];"
+      },
+      "id": "node_save_memory_approved",
+      "name": "Save Memory (Approved)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3050, 520],
+      "notes": "Updates interaction history files inside data/memory/"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $('Parse AI Response').item.json;\nconst now = new Date();\nconst dateStr = now.toISOString().replace('T', ' ').substring(0, 19);\nconst dateFile = now.toISOString().replace(/[:.]/g, '-').substring(0, 19);\n\nconst markdownLog = `# Email Approved & Sent Log\\n\\n**Date:** ${dateStr}  \\n**From:** ${data.senderName} <${data.senderEmail}>  \\n**Subject:** ${data.subject}  \\n**AI Category:** ${data.ai.category}  \\n**Confidence:** ${data.ai.confidence}%  \\n**Urgency:** ${data.ai.urgency_score}/10 (${data.ai.urgency_reason})  \\n**Priority:** ${data.ai.priority}  \\n**Sentiment:** ${data.ai.sentiment}  \\n**Summary:** ${data.ai.summary}  \\n**Follow-up Suggestion:** ${data.ai.follow_up_suggestion}  \\n**Approval Status:** APPROVED & SENT  \\n\\n---\\n## Email Body\\n\\n\\`\\`\\`\\n${data.emailBody}\\n\\`\\`\\`\\n\\n---\\n## Approved Reply Sent\\n\\n\\`\\`\\`\\n${data.ai.reply}\\n\\`\\`\\`\\n\\n---\\n*AI Email Approval Agent — Processing Report*\\n`;\n\nreturn [{\n  json: {\n    ...data,\n    markdownLog,\n    logFilePath: `/home/node/logs/${dateFile}.md`\n  }\n}];"
+      },
+      "id": "node_gen_markdown_approved",
+      "name": "Generate Markdown (Approved)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3250, 520],
+      "notes": "Constructs the markdown file contents for approved replies"
+    },
+    {
+      "parameters": {
+        "jsCode": "const fs = require('fs');\nconst path = require('path');\nconst data = $input.item.json;\n\ntry {\n  const dir = path.dirname(data.logFilePath);\n  if (!fs.existsSync(dir)) { fs.mkdirSync(dir, { recursive: true }); }\n  fs.writeFileSync(data.logFilePath, data.markdownLog, 'utf8');\n} catch (err) {\n  console.error('Failed to save approved log:', err.message);\n}\n\nreturn [{ json: { ...data, logSaved: true } }];"
+      },
+      "id": "node_save_log_approved",
+      "name": "Save Reply Log (Approved)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3450, 520],
+      "notes": "Writes the markdown report to logs/"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $('Parse AI Response').item.json;\nconst now = new Date();\nconst dateStr = now.toISOString().replace('T', ' ').substring(0, 19);\nconst dateFile = now.toISOString().replace(/[:.]/g, '-').substring(0, 19);\n\nconst markdownLog = `# Email Rejection Log\\n\\n**Date:** ${dateStr}  \\n**From:** ${data.senderName} <${data.senderEmail}>  \\n**Subject:** ${data.subject}  \\n**AI Category:** ${data.ai.category}  \\n**Confidence:** ${data.ai.confidence}%  \\n**Urgency:** ${data.ai.urgency_score}/10 (${data.ai.urgency_reason})  \\n**Priority:** ${data.ai.priority}  \\n**Sentiment:** ${data.ai.sentiment}  \\n**Summary:** ${data.ai.summary}  \\n**Approval Status:** REJECTED & DISCARDED  \\n\\n---\\n## Email Body\\n\\n\\`\\`\\`\\n${data.emailBody}\\n\\`\\`\\`\\n\\n---\\n## Rejected AI Draft Reply (Discarded)\\n\\n\\`\\`\\`\\n${data.ai.reply}\\n\\`\\`\\`\\n\\n---\\n*AI Email Approval Agent — Rejection Report*\\n`;\n\nreturn [{\n  json: {\n    ...data,\n    markdownLog,\n    logFilePath: `/home/node/logs/rejected/rejected-${dateFile}.md`\n  }\n}];"
+      },
+      "id": "node_gen_rejection_markdown",
+      "name": "Generate Rejection Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2850, 680],
+      "notes": "Constructs the markdown file contents for rejected drafts"
+    },
+    {
+      "parameters": {
+        "jsCode": "const fs = require('fs');\nconst path = require('path');\nconst data = $input.item.json;\n\ntry {\n  const dir = path.dirname(data.logFilePath);\n  if (!fs.existsSync(dir)) { fs.mkdirSync(dir, { recursive: true }); }\n  fs.writeFileSync(data.logFilePath, data.markdownLog, 'utf8');\n} catch (err) {\n  console.error('Failed to save rejection log:', err.message);\n}\n\nreturn [{ json: { ...data, rejectionLogSaved: true } }];"
+      },
+      "id": "node_save_rejection_log",
+      "name": "Save Rejection Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3050, 680],
+      "notes": "Writes the rejection markdown log to logs/rejected/"
+    }
+  ],
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Read Full Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Full Email": {
+      "main": [
+        [
+          {
+            "node": "Extract Email Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Email Fields": {
+      "main": [
+        [
+          {
+            "node": "Retrieve Memory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Retrieve Memory": {
+      "main": [
+        [
+          {
+            "node": "Build Memory Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Memory Context": {
+      "main": [
+        [
+          {
+            "node": "Build Ollama Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Ollama Payload": {
+      "main": [
+        [
+          {
+            "node": "AI Planner (Ollama)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Planner (Ollama)": {
+      "main": [
+        [
+          {
+            "node": "Parse AI Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse AI Response": {
+      "main": [
+        [
+          {
+            "node": "Decision Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Decision Switch": {
+      "main": [
+        [
+          {
+            "node": "Generate Spam Markdown",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Gmail Reply (Auto)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Approval Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Spam Markdown": {
+      "main": [
+        [
+          {
+            "node": "Save Spam Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Gmail Reply (Auto)": {
+      "main": [
+        [
+          {
+            "node": "Save Memory (Auto)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Memory (Auto)": {
+      "main": [
+        [
+          {
+            "node": "Generate Markdown (Auto)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Markdown (Auto)": {
+      "main": [
+        [
+          {
+            "node": "Save Reply Log (Auto)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Approval Email": {
+      "main": [
+        [
+          {
+            "node": "Send Approval Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Approval Notification": {
+      "main": [
+        [
+          {
+            "node": "Wait for Approval",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for Approval": {
+      "main": [
+        [
+          {
+            "node": "Approved?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Approved?": {
+      "main": [
+        [
+          {
+            "node": "Send Gmail Reply (Approved)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Generate Rejection Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Gmail Reply (Approved)": {
+      "main": [
+        [
+          {
+            "node": "Save Memory (Approved)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Memory (Approved)": {
+      "main": [
+        [
+          {
+            "node": "Generate Markdown (Approved)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Markdown (Approved)": {
+      "main": [
+        [
+          {
+            "node": "Save Reply Log (Approved)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Rejection Log": {
+      "main": [
+        [
+          {
+            "node": "Save Rejection Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "timezone": "Asia/Kolkata"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "id": "tag_agent_1",
+      "name": "AI-Agent"
+    },
+    {
+      "id": "tag_agent_2",
+      "name": "Email-Approval"
+    }
+  ],
+  "triggerCount": 1,
+  "versionId": "v2.0.0",
+  "meta": {
+    "instanceId": "ai-email-approval-agent-v2"
+  }
+}

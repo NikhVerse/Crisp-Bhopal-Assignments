@@ -1,0 +1,34 @@
+# Secrets
+.env
+*.secret
+
+# Logs (generated at runtime — committed structure only)
+logs/*.md
+logs/spam/*.md
+logs/rejected/*.md
+!logs/.gitkeep
+!logs/spam/.gitkeep
+!logs/rejected/.gitkeep
+
+# Memory (generated at runtime — committed samples only)
+data/memory/*.json
+!data/memory/sample_john@gmail.com.json
+
+# Screenshots
+screenshots/*.png
+screenshots/*.jpg
+!screenshots/.gitkeep
+
+# Docker volumes
+n8n_data/
+ollama_data/
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# Node
+node_modules/
