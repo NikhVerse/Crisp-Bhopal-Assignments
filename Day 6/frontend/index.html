@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Healthcare AI Clinical Assistant — An AI-powered educational tool to understand symptoms, medications, medical reports, and healthy lifestyle recommendations. Powered by Grok AI." />
+  <meta name="keywords" content="healthcare AI, symptom checker, medical term explainer, prescription guide, health tips, emergency checker, clinical assistant" />
+  <meta name="author" content="Healthcare AI Clinical Assistant" />
+  <meta property="og:title" content="Healthcare AI — Clinical Assistant" />
+  <meta property="og:description" content="AI-powered educational healthcare assistant. Understand symptoms, medications, and wellness." />
+  <meta property="og:type" content="website" />
+  <title>Healthcare AI — Clinical Assistant</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%231d4ed8'/><rect x='42' y='18' width='16' height='64' rx='6' fill='white'/><rect x='18' y='42' width='64' height='16' rx='6' fill='white'/></svg>" />
+</head>
+<body>
+
+<div class="app-shell">
+
+  <!-- =====================================================================
+       SIDEBAR
+       ===================================================================== -->
+  <aside class="sidebar" id="sidebar" role="navigation" aria-label="Main navigation">
+
+    <div class="sidebar-brand">
+      <div class="sidebar-brand-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M19 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2zm-1 9h-4v4h-4v-4H6v-4h4V4h4v4h4v4z"/>
+        </svg>
+      </div>
+      <div class="sidebar-brand-text">
+        <span class="sidebar-brand-name">Healthcare AI</span>
+        <span class="sidebar-brand-tag">Clinical Assistant</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav" aria-label="Feature navigation">
+      <span class="nav-section-label">Overview</span>
+
+      <button class="nav-item active" data-page="dashboard" id="nav-dashboard" aria-label="Dashboard">
+        <span class="nav-icon" aria-hidden="true">DB</span>
+        Dashboard
+      </button>
+
+      <span class="nav-section-label">Clinical Tools</span>
+
+      <button class="nav-item" data-page="symptom" id="nav-symptom" aria-label="Symptom Analyzer">
+        <span class="nav-icon" aria-hidden="true">Sx</span>
+        Symptom Analyzer
+      </button>
+
+      <button class="nav-item" data-page="medterm" id="nav-medterm" aria-label="Medical Term Explainer">
+        <span class="nav-icon" aria-hidden="true">Tx</span>
+        Term Explainer
+      </button>
+
+      <button class="nav-item" data-page="prescription" id="nav-prescription" aria-label="Prescription Explainer">
+        <span class="nav-icon" aria-hidden="true">Rx</span>
+        Prescription
+      </button>
+
+      <button class="nav-item" data-page="healthtips" id="nav-healthtips" aria-label="Health Tips Generator">
+        <span class="nav-icon" aria-hidden="true">Ws</span>
+        Health Tips
+      </button>
+
+      <button class="nav-item" data-page="report" id="nav-report" aria-label="Medical Report Summarizer">
+        <span class="nav-icon" aria-hidden="true">Rp</span>
+        Report Summary
+      </button>
+
+      <button class="nav-item" data-page="emergency" id="nav-emergency" aria-label="Emergency Checker">
+        <span class="nav-icon" aria-hidden="true">ER</span>
+        Emergency Checker
+        <span class="nav-badge">URGENT</span>
+      </button>
+
+      <span class="nav-section-label">Information</span>
+
+      <button class="nav-item" data-page="about" id="nav-about" aria-label="About">
+        <span class="nav-icon" aria-hidden="true">Ab</span>
+        About
+      </button>
+    </nav>
+
+    <!-- API Status -->
+    <div class="api-status-bar" role="status" aria-live="polite">
+      <div class="api-indicator">
+        <div class="api-dot" id="apiDot" aria-hidden="true"></div>
+        <span class="api-label" id="apiStatusText">Connecting…</span>
+      </div>
+    </div>
+
+    <!-- Clear History -->
+    <div style="padding: 0 12px 8px;">
+      <button class="btn btn-secondary btn-sm" id="clearHistoryBtn" style="width:100%;font-size:12px;" aria-label="Clear conversation history">
+        Clear History
+      </button>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-footer-row">
+        <span>v1.0.0</span>
+        <span>Educational Use Only</span>
+      </div>
+      <div style="font-size:10px;color:var(--text-subtle);margin-top:2px;">Not a substitute for medical advice</div>
+    </div>
+  </aside>
+
+  <div class="sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+
+  <!-- =====================================================================
+       MAIN CONTENT
+       ===================================================================== -->
+  <div class="main-content" id="mainContent">
+
+    <!-- Navbar -->
+    <header class="navbar" role="banner">
+      <div class="navbar-left">
+        <button class="hamburger-btn" id="hamburgerBtn" aria-label="Toggle navigation" aria-expanded="false">&#9776;</button>
+        <div class="navbar-breadcrumb">
+          <span class="navbar-breadcrumb-root">Healthcare AI</span>
+          <span class="navbar-breadcrumb-sep">&#8250;</span>
+          <span class="navbar-page-title" id="navbarPageTitle">Dashboard</span>
+        </div>
+      </div>
+      <div class="navbar-right">
+        <button class="navbar-btn" id="themeToggle" aria-label="Toggle dark mode" title="Toggle dark mode (Ctrl+D)" style="font-size:11px;font-weight:700;">Dark</button>
+        <button class="navbar-btn" id="shortcutsBtn" aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)" style="font-size:11px;font-weight:700;">Keys</button>
+      </div>
+    </header>
+
+    <!-- ==================================================================
+         MAIN PAGE CONTAINER
+         ================================================================== -->
+    <main class="page-content" id="pageContainer" role="main">
+
+      <!-- ================================================================
+           PAGE: DASHBOARD
+           ================================================================ -->
+      <section class="page active" id="page-dashboard" aria-labelledby="dashboard-h1">
+
+        <!-- Hero Banner -->
+        <div class="hero-banner">
+          <div class="hero-content">
+            <div class="hero-tag">AI-Powered &bull; Educational Platform &bull; Grok API</div>
+            <h1 id="dashboard-h1">Healthcare AI Clinical Assistant</h1>
+            <p>An intelligent educational platform designed to help patients, caregivers, and health enthusiasts understand complex medical information through AI-powered analysis. Six specialised clinical tools, all in one dashboard.</p>
+            <div class="hero-actions">
+              <button class="hero-btn-primary" id="heroSymptomBtn" aria-label="Open Symptom Analyzer">Analyze Symptoms</button>
+              <button class="hero-btn-outline" id="heroEmergencyBtn" aria-label="Open Emergency Checker">Emergency Check</button>
+            </div>
+            <div class="hero-metrics">
+              <div class="hero-metric">
+                <div class="hero-metric-value">6</div>
+                <div class="hero-metric-label">Clinical Tools</div>
+              </div>
+              <div class="hero-metric">
+                <div class="hero-metric-value">AI</div>
+                <div class="hero-metric-label">Grok-Powered</div>
+              </div>
+              <div class="hero-metric">
+                <div class="hero-metric-value">100%</div>
+                <div class="hero-metric-label">Educational</div>
+              </div>
+              <div class="hero-metric">
+                <div class="hero-metric-value">0</div>
+                <div class="hero-metric-label">Diagnoses Made</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Disclaimer -->
+        <div class="disclaimer-panel" role="note">
+          <div class="disclaimer-icon">
+            <svg viewBox="0 0 20 20"><path d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"/></svg>
+          </div>
+          <p class="disclaimer-text">
+            <strong>Important Medical Disclaimer:</strong> This AI assistant is for educational purposes only and is not a substitute for professional medical advice, diagnosis, or treatment. Always consult a qualified healthcare professional for any medical concerns. If you are experiencing a medical emergency, call emergency services immediately.
+          </p>
+        </div>
+
+        <!-- Stat Grid -->
+        <div class="stats-grid">
+          <div class="stat-card" data-navigate="symptom" role="button" tabindex="0" aria-label="Go to Symptom Analyzer">
+            <div class="stat-card-header">
+              <div class="stat-abbr">Sx</div>
+              <span class="stat-badge">AI Tool</span>
+            </div>
+            <div class="stat-label">Symptom Analyzer</div>
+            <div class="stat-value">Triage</div>
+            <div class="stat-description">Educational symptom assessment</div>
+          </div>
+          <div class="stat-card" data-navigate="medterm" role="button" tabindex="0" aria-label="Go to Medical Term Explainer">
+            <div class="stat-card-header">
+              <div class="stat-abbr">Tx</div>
+              <span class="stat-badge">AI Tool</span>
+            </div>
+            <div class="stat-label">Term Explainer</div>
+            <div class="stat-value">1000+</div>
+            <div class="stat-description">Medical terms simplified</div>
+          </div>
+          <div class="stat-card" data-navigate="prescription" role="button" tabindex="0" aria-label="Go to Prescription Explainer">
+            <div class="stat-card-header">
+              <div class="stat-abbr">Rx</div>
+              <span class="stat-badge">AI Tool</span>
+            </div>
+            <div class="stat-label">Prescription Guide</div>
+            <div class="stat-value">Safe</div>
+            <div class="stat-description">Medicine information</div>
+          </div>
+          <div class="stat-card" data-navigate="emergency" role="button" tabindex="0" aria-label="Go to Emergency Checker">
+            <div class="stat-card-header">
+              <div class="stat-abbr">ER</div>
+              <span class="stat-badge" style="background:var(--red-100);color:var(--red-700);border-color:var(--red-200);">URGENT</span>
+            </div>
+            <div class="stat-label">Emergency Checker</div>
+            <div class="stat-value">4-Level</div>
+            <div class="stat-description">Risk assessment tool</div>
+          </div>
+          <div class="stat-card" data-navigate="healthtips" role="button" tabindex="0" aria-label="Go to Health Tips">
+            <div class="stat-card-header">
+              <div class="stat-abbr">Ws</div>
+              <span class="stat-badge">AI Tool</span>
+            </div>
+            <div class="stat-label">Health Tips</div>
+            <div class="stat-value">7</div>
+            <div class="stat-description">Wellness categories</div>
+          </div>
+          <div class="stat-card" data-navigate="report" role="button" tabindex="0" aria-label="Go to Report Summary">
+            <div class="stat-card-header">
+              <div class="stat-abbr">Rp</div>
+              <span class="stat-badge">AI Tool</span>
+            </div>
+            <div class="stat-label">Report Summarizer</div>
+            <div class="stat-value">AI</div>
+            <div class="stat-description">Decode lab reports</div>
+          </div>
+        </div>
+
+        <!-- Feature Cards -->
+        <h2 style="font-size:17px;font-weight:700;color:var(--text-heading);margin-bottom:16px;letter-spacing:-0.01em;">Clinical Tool Suite</h2>
+        <div class="features-grid">
+
+          <div class="feature-card" data-navigate="symptom" role="button" tabindex="0">
+            <div class="feature-card-header">
+              <div class="feature-abbr">Sx</div>
+              <div>
+                <h3>Symptom Analyzer</h3>
+                <span class="feature-card-tag">Symptom Assessment</span>
+              </div>
+            </div>
+            <p>Provide your age, gender, symptoms, duration, severity, and medical history to receive an AI-generated educational overview for clinical decision support.</p>
+            <ul class="feature-capabilities">
+              <li>Possible condition considerations (educational)</li>
+              <li>Urgency level classification (Low / Moderate / High)</li>
+              <li>Recommended medical specialist type</li>
+              <li>Home care guidelines and warning signs</li>
+              <li>Lifestyle and prevention recommendations</li>
+            </ul>
+            <div class="feature-card-action">Open Symptom Analyzer &rarr;</div>
+          </div>
+
+          <div class="feature-card" data-navigate="medterm" role="button" tabindex="0">
+            <div class="feature-card-header">
+              <div class="feature-abbr">Tx</div>
+              <div>
+                <h3>Medical Term Explainer</h3>
+                <span class="feature-card-tag">Terminology</span>
+              </div>
+            </div>
+            <p>Enter any medical term, abbreviation, diagnostic code, or procedure name to receive a comprehensive plain-language explanation accessible to non-clinical users.</p>
+            <ul class="feature-capabilities">
+              <li>Clear definition in plain language</li>
+              <li>Clinical causes and risk factors</li>
+              <li>Associated symptoms and presentations</li>
+              <li>Diagnostic methods and treatment overview</li>
+              <li>Prevention and patient-friendly explanation</li>
+            </ul>
+            <div class="feature-card-action">Open Term Explainer &rarr;</div>
+          </div>
+
+          <div class="feature-card" data-navigate="prescription" role="button" tabindex="0">
+            <div class="feature-card-header">
+              <div class="feature-abbr">Rx</div>
+              <div>
+                <h3>Prescription Explainer</h3>
+                <span class="feature-card-tag">Pharmacology</span>
+              </div>
+            </div>
+            <p>Enter one or more medicine names to receive detailed educational information covering clinical use, safety profile, interactions, storage, and important warnings.</p>
+            <ul class="feature-capabilities">
+              <li>Therapeutic purpose and approved uses</li>
+              <li>Common and serious side effects</li>
+              <li>Drug-food and drug-drug interactions</li>
+              <li>Dosage guidance (consult prescriber)</li>
+              <li>Storage conditions and expiry handling</li>
+            </ul>
+            <div class="feature-card-action">Open Prescription Tool &rarr;</div>
+          </div>
+
+          <div class="feature-card" data-navigate="healthtips" role="button" tabindex="0">
+            <div class="feature-card-header">
+              <div class="feature-abbr">Ws</div>
+              <div>
+                <h3>Health Tips Generator</h3>
+                <span class="feature-card-tag">Wellness</span>
+              </div>
+            </div>
+            <p>Select from seven evidence-based health categories to receive a comprehensive, personalised wellness guide covering daily habits, nutrition, and lifestyle changes.</p>
+            <ul class="feature-capabilities">
+              <li>Structured daily and weekly routine</li>
+              <li>Evidence-based dietary recommendations</li>
+              <li>Progressive exercise and activity plan</li>
+              <li>Hydration and sleep optimisation</li>
+              <li>Foods to avoid and lifestyle adjustments</li>
+            </ul>
+            <div class="feature-card-action">Open Health Tips &rarr;</div>
+          </div>
+
+          <div class="feature-card" data-navigate="report" role="button" tabindex="0">
+            <div class="feature-card-header">
+              <div class="feature-abbr">Rp</div>
+              <div>
+                <h3>Medical Report Summarizer</h3>
+                <span class="feature-card-tag">Report Analysis</span>
+              </div>
+            </div>
+            <p>Paste any medical report — blood tests, radiology, pathology, or discharge summary — to receive a plain-language interpretation with actionable insights.</p>
+            <ul class="feature-capabilities">
+              <li>Executive summary in accessible language</li>
+              <li>Identification of key findings</li>
+              <li>Flagging of abnormal values with context</li>
+              <li>Educational interpretation of results</li>
+              <li>Suggested questions for your doctor</li>
+            </ul>
+            <div class="feature-card-action">Open Report Summarizer &rarr;</div>
+          </div>
+
+          <div class="feature-card" data-navigate="emergency" role="button" tabindex="0">
+            <div class="feature-card-header">
+              <div class="feature-abbr">ER</div>
+              <div>
+                <h3>Emergency Checker</h3>
+                <span class="feature-card-tag">Risk Assessment</span>
+              </div>
+            </div>
+            <p>Describe your current symptoms to receive an educational risk level classification with clear next steps, emergency guidance, and hospital visit recommendations.</p>
+            <ul class="feature-capabilities">
+              <li>4-level risk classification: Low / Medium / High / Emergency</li>
+              <li>Clinical reasoning behind the risk level</li>
+              <li>Immediate and follow-up action steps</li>
+              <li>Emergency services guidance when indicated</li>
+              <li>Hospital visit recommendation criteria</li>
+            </ul>
+            <div class="feature-card-action">Open Emergency Checker &rarr;</div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ================================================================
+           PAGE: SYMPTOM ANALYZER
+           ================================================================ -->
+      <section class="page" id="page-symptom" aria-labelledby="symptom-h1">
+        <div class="page-header">
+          <div class="page-header-meta">
+            <span class="page-section-tag">Clinical Tool &mdash; Sx</span>
+          </div>
+          <h1 id="symptom-h1">Symptom Analyzer</h1>
+          <p>Provide complete patient information below. The AI will generate an educational analysis covering possible clinical considerations, urgency classification, and recommended care pathways. This tool does not diagnose any medical condition.</p>
+        </div>
+
+        <div class="disclaimer-panel" role="note">
+          <div class="disclaimer-icon">
+            <svg viewBox="0 0 20 20"><path d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"/></svg>
+          </div>
+          <p class="disclaimer-text">
+            <strong>Disclaimer:</strong> This AI assistant is for educational purposes only and is not a substitute for professional medical advice, diagnosis, or treatment. Consult a qualified physician for any health concern.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-header-left">
+              <div class="card-icon">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+              </div>
+              <div>
+                <div class="card-title">Patient Information Form</div>
+                <div class="card-subtitle">All fields marked with an asterisk (*) are required</div>
+              </div>
+            </div>
+          </div>
+
+          <form id="symptomForm" novalidate aria-label="Symptom analysis form">
+            <div class="form-grid">
+
+              <div class="form-group">
+                <label class="form-label" for="symptomAge">
+                  Age (years) <span class="required-mark">*</span>
+                </label>
+                <p class="form-helper">Enter the patient's current age in whole years (0–120).</p>
+                <input class="form-input" type="number" id="symptomAge" name="age"
+                       placeholder="e.g. 35" min="0" max="120" required aria-required="true" />
+                <div class="form-footer">
+                  <span class="form-error-msg" role="alert"></span>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="symptomGender">Biological Sex / Gender</label>
+                <p class="form-helper">Select the patient's biological sex or gender identity.</p>
+                <select class="form-select" id="symptomGender" name="gender">
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other / Prefer not to say</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="symptomSeverity">Symptom Severity</label>
+                <p class="form-helper">Self-assessed severity level based on impact on daily functioning.</p>
+                <select class="form-select" id="symptomSeverity" name="severity">
+                  <option value="Mild">Mild — Noticeable but manageable; not debilitating</option>
+                  <option value="Moderate" selected>Moderate — Significantly affecting daily activities</option>
+                  <option value="Severe">Severe — Unable to perform normal functions</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="symptomDuration">
+                  Duration of Symptoms <span class="required-mark">*</span>
+                </label>
+                <p class="form-helper">How long have the current symptoms been present? Be specific.</p>
+                <input class="form-input" type="text" id="symptomDuration" name="duration"
+                       placeholder="e.g. 3 days, approximately 2 weeks, since this morning"
+                       required aria-required="true" />
+                <div class="form-footer">
+                  <span class="form-error-msg" role="alert"></span>
+                </div>
+              </div>
+
+              <div class="form-group full-width">
+                <label class="form-label" for="symptomSymptoms">
+                  Current Symptoms <span class="required-mark">*</span>
+                </label>
+                <p class="form-helper">Describe all symptoms in detail — include location, character, onset, and any aggravating or relieving factors. More detail produces better analysis.</p>
+                <div class="input-row">
+                  <textarea class="form-textarea" id="symptomSymptoms" name="symptoms"
+                            placeholder="Describe all symptoms in detail. Example: Persistent frontal headache for 3 days, fever of 38.5°C, sore throat with white patches, generalised fatigue, mild dry cough. Pain worsens in the morning and is relieved partially by ibuprofen."
+                            rows="5" required aria-required="true" maxlength="2000"></textarea>
+                  <button class="voice-btn" type="button" id="voiceSymptoms" title="Voice input" aria-label="Start voice input for symptoms">&#127908;</button>
+                </div>
+                <div class="form-footer">
+                  <span class="form-error-msg" role="alert"></span>
+                  <span class="char-counter" id="symptomSymptomsCount" aria-live="polite">0 / 2000</span>
+                </div>
+              </div>
+
+              <div class="form-group full-width">
+                <label class="form-label" for="symptomHistory">Past Medical History</label>
+                <p class="form-helper">List existing chronic conditions, past surgeries, hospitalisations, or significant illnesses. Include approximate dates where known.</p>
+                <div class="input-row">
+                  <textarea class="form-textarea" id="symptomHistory" name="history"
+                            placeholder="Example: Type 2 Diabetes Mellitus (diagnosed 2019, on Metformin), Essential Hypertension (2017), Appendectomy (2015), No known drug allergies. Family history of cardiovascular disease."
+                            rows="3" maxlength="2000"></textarea>
+                  <button class="voice-btn" type="button" id="voiceHistory" title="Voice input" aria-label="Start voice input for medical history">&#127908;</button>
+                </div>
+                <div class="form-footer">
+                  <span></span>
+                  <span class="char-counter" id="symptomHistoryCount" aria-live="polite">0 / 2000</span>
+                </div>
+              </div>
+
+              <div class="form-group full-width">
+                <label class="form-label" for="symptomMeds">Current Medications</label>
+                <p class="form-helper">List all medications currently being taken, including prescription drugs, over-the-counter medicines, vitamins, and supplements with dosage if known.</p>
+                <div class="input-row">
+                  <textarea class="form-textarea" id="symptomMeds" name="meds"
+                            placeholder="Example: Metformin 500mg twice daily, Lisinopril 10mg once daily, Atorvastatin 20mg at night, Vitamin D3 1000 IU daily, Aspirin 75mg once daily."
+                            rows="2" maxlength="1000"></textarea>
+                  <button class="voice-btn" type="button" id="voiceMeds" title="Voice input" aria-label="Start voice input for medications">&#127908;</button>
+                </div>
+                <div class="form-footer">
+                  <span></span>
+                  <span class="char-counter" id="symptomMedsCount" aria-live="polite">0 / 1000</span>
+                </div>
+              </div>
+
+            </div>
+
+            <div class="form-actions">
+              <button class="btn btn-generate" type="button" id="symptomGenerate" aria-label="Generate symptom analysis">
+                Generate Analysis
+              </button>
+              <button class="btn btn-secondary" type="button" id="symptomReset" aria-label="Reset all form fields">
+                Reset Form
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div class="loading-container" id="symptomLoading" role="status" aria-live="polite">
+          <div class="loading-spinner"></div>
+          <span class="loading-label">Analyzing symptoms with Grok AI</span>
+          <span class="loading-sublabel">Processing patient information and generating educational clinical analysis. This may take up to 30 seconds.</span>
+          <div class="loading-dots">
+            <div class="loading-dot"></div>
+            <div class="loading-dot"></div>
+            <div class="loading-dot"></div>
+          </div>
+        </div>
+
+        <div class="result-card" id="symptomResult" role="region" aria-labelledby="symptomResultTitle" aria-live="polite">
+          <div class="result-card-header">
+            <div class="result-header-left">
+              <div class="result-header-abbr">Sx</div>
+              <div>
+                <div class="result-header-title" id="symptomResultTitle">Symptom Analysis Report</div>
+                <div class="result-header-sub">Educational &mdash; Not a Clinical Diagnosis</div>
+              </div>
+            </div>
+            <div class="result-actions">
+              <button class="result-action-btn result-copy-btn" aria-label="Copy to clipboard">Copy</button>
+              <button class="result-action-btn result-tts-btn" aria-label="Read aloud">Read Aloud</button>
+              <button class="result-action-btn result-pdf-btn" aria-label="Download as PDF">Export PDF</button>
+            </div>
+          </div>
+          <div class="result-meta-bar" id="symptomResultMeta"></div>
+          <div class="result-body"><div class="md-content" id="symptomResultBody"></div></div>
+        </div>
+      </section>
+
+      <!-- ================================================================
+           PAGE: MEDICAL TERM EXPLAINER
+           ================================================================ -->
+      <section class="page" id="page-medterm" aria-labelledby="medterm-h1">
+        <div class="page-header">
+          <div class="page-header-meta">
+            <span class="page-section-tag">Clinical Tool &mdash; Tx</span>
+          </div>
+          <h1 id="medterm-h1">Medical Term Explainer</h1>
+          <p>Enter any medical term, abbreviation, diagnostic label, laboratory parameter, or clinical procedure to receive a comprehensive plain-language explanation with clinical context, causes, symptoms, diagnostic methods, and treatment overview.</p>
+        </div>
+
+        <div class="disclaimer-panel" role="note">
+          <div class="disclaimer-icon">
+            <svg viewBox="0 0 20 20"><path d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"/></svg>
+          </div>
+          <p class="disclaimer-text">
+            <strong>Disclaimer:</strong> This AI assistant is for educational purposes only and is not a substitute for professional medical advice, diagnosis, or treatment.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-header-left">
+              <div class="card-icon">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg>
+              </div>
+              <div>
+                <div class="card-title">Medical Term Lookup</div>
+                <div class="card-subtitle">Supports medical terms, abbreviations, lab parameters, and procedures</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Examples -->
+          <div style="margin-bottom:18px;">
+            <p style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.06em;">Quick Examples — Click to Select</p>
+            <div class="term-chips">
+              <button class="term-chip" data-term="Hypertension">Hypertension</button>
+              <button class="term-chip" data-term="Tachycardia">Tachycardia</button>
+              <button class="term-chip" data-term="Hypoglycemia">Hypoglycemia</button>
+              <button class="term-chip" data-term="Myocardial Infarction">Myocardial Infarction</button>
+              <button class="term-chip" data-term="Atrial Fibrillation">Atrial Fibrillation</button>
+              <button class="term-chip" data-term="Anemia">Anemia</button>
+              <button class="term-chip" data-term="Osteoporosis">Osteoporosis</button>
+              <button class="term-chip" data-term="Hypothyroidism">Hypothyroidism</button>
+              <button class="term-chip" data-term="Creatinine">Creatinine</button>
+              <button class="term-chip" data-term="HbA1c">HbA1c</button>
+              <button class="term-chip" data-term="Echocardiogram">Echocardiogram</button>
+              <button class="term-chip" data-term="Sepsis">Sepsis</button>
+            </div>
+          </div>
+
+          <form id="medtermForm" novalidate aria-label="Medical term explanation form">
+            <div class="form-group">
+              <label class="form-label" for="medtermInput">
+                Medical Term or Abbreviation <span class="required-mark">*</span>
+              </label>
+              <p class="form-helper">Enter the exact term as it appears in your medical documentation. Include context if helpful (e.g., "Creatinine — kidney function test").</p>
+              <div class="input-row">
+                <input class="form-input" type="text" id="medtermInput" name="term"
+                       placeholder="e.g. Hypertension, ECG, Creatinine, Pulmonary Embolism, INR, Biopsy…"
+                       required aria-required="true" maxlength="200" />
+                <button class="voice-btn" type="button" id="voiceMedterm" title="Voice input" aria-label="Start voice input">&#127908;</button>
+              </div>
+              <div class="form-footer">
+                <span class="form-error-msg" role="alert"></span>
+                <span class="char-counter" id="medtermCount" aria-live="polite">0 / 200</span>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button class="btn btn-generate" type="button" id="medtermGenerate" aria-label="Explain medical term">
+                Generate Explanation
+              </button>
+              <button class="btn btn-secondary" type="button" id="medtermReset" aria-label="Reset form">
+                Reset Form
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div class="loading-container" id="medtermLoading" role="status" aria-live="polite">
+          <div class="loading-spinner"></div>
+          <span class="loading-label">Generating explanation with Grok AI</span>
+          <span class="loading-sublabel">Retrieving clinical information and preparing a comprehensive patient-friendly explanation.</span>
+          <div class="loading-dots"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div>
+        </div>
+
+        <div class="result-card" id="medtermResult" role="region" aria-labelledby="medtermResultTitle" aria-live="polite">
+          <div class="result-card-header">
+            <div class="result-header-left">
+              <div class="result-header-abbr">Tx</div>
+              <div>
+                <div class="result-header-title" id="medtermResultTitle">Medical Term Explanation</div>
+                <div class="result-header-sub">Educational Reference &mdash; Patient-Friendly Language</div>
+              </div>
+            </div>
+            <div class="result-actions">
+              <button class="result-action-btn result-copy-btn" aria-label="Copy">Copy</button>
+              <button class="result-action-btn result-tts-btn" aria-label="Read aloud">Read Aloud</button>
+              <button class="result-action-btn result-pdf-btn" aria-label="Export PDF">Export PDF</button>
+            </div>
+          </div>
+          <div class="result-meta-bar" id="medtermResultMeta"></div>
+          <div class="result-body"><div class="md-content" id="medtermResultBody"></div></div>
+        </div>
+      </section>
+
+      <!-- ================================================================
+           PAGE: PRESCRIPTION EXPLAINER
+           ================================================================ -->
+      <section class="page" id="page-prescription" aria-labelledby="prescription-h1">
+        <div class="page-header">
+          <div class="page-header-meta">
+            <span class="page-section-tag">Clinical Tool &mdash; Rx</span>
+          </div>
+          <h1 id="prescription-h1">Prescription Explainer</h1>
+          <p>Enter one or more medicine names to receive detailed educational information including therapeutic purpose, side effect profile, drug interactions, dosage guidance, storage requirements, and critical safety warnings. Do not self-medicate based on this information.</p>
+        </div>
+
+        <div class="disclaimer-panel" role="note">
+          <div class="disclaimer-icon">
+            <svg viewBox="0 0 20 20"><path d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"/></svg>
+          </div>
+          <p class="disclaimer-text">
+            <strong>Disclaimer:</strong> Never start, stop, or modify any medication without consulting your prescribing physician or registered pharmacist. This information is for educational purposes only and does not replace professional pharmaceutical advice.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-header-left">
+              <div class="card-icon">
+                <svg viewBox="0 0 24 24"><path d="M6.5 10h-2v5h2v-5zm4 0h-2v5h2v-5zm8.5 7H4v2h15v-2zm-4.5-7h-2v5h2v-5zM11.5 1L2 6v2h19V6l-9.5-5z"/></svg>
+              </div>
+              <div>
+                <div class="card-title">Medicine Information Lookup</div>
+                <div class="card-subtitle">Enter multiple medicines separated by commas or line breaks for a comprehensive review</div>
+              </div>
+            </div>
+          </div>
+
+          <form id="prescriptionForm" novalidate aria-label="Prescription explanation form">
+            <div class="form-group">
+              <label class="form-label" for="prescriptionMeds">
+                Medicine Name(s) <span class="required-mark">*</span>
+              </label>
+              <p class="form-helper">Enter medicine names as they appear on your prescription or packaging. You may include the strength and formulation for more accurate information (e.g., "Metformin 500mg extended release").</p>
+              <div class="input-row">
+                <textarea class="form-textarea" id="prescriptionMeds" name="medicines"
+                          placeholder="Enter medicine names, one per line or separated by commas.&#10;&#10;Examples:&#10;Metformin 500mg&#10;Lisinopril 10mg&#10;Atorvastatin 20mg&#10;Aspirin 75mg&#10;Omeprazole 20mg"
+                          rows="5" required aria-required="true" maxlength="1000"></textarea>
+                <button class="voice-btn" type="button" id="voicePrescription" title="Voice input" aria-label="Start voice input">&#127908;</button>
+              </div>
+              <div class="form-footer">
+                <span class="form-error-msg" role="alert"></span>
+                <span class="char-counter" id="prescriptionMedsCount" aria-live="polite">0 / 1000</span>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button class="btn btn-generate" type="button" id="prescriptionGenerate" aria-label="Explain prescription">
+                Generate Medicine Report
+              </button>
+              <button class="btn btn-secondary" type="button" id="prescriptionReset" aria-label="Reset form">
+                Reset Form
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div class="loading-container" id="prescriptionLoading" role="status" aria-live="polite">
+          <div class="loading-spinner"></div>
+          <span class="loading-label">Retrieving medicine information</span>
+          <span class="loading-sublabel">Compiling pharmacological data, safety profiles, and interaction information for each medicine.</span>
+          <div class="loading-dots"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div>
+        </div>
+
+        <div class="result-card" id="prescriptionResult" role="region" aria-labelledby="prescriptionResultTitle" aria-live="polite">
+          <div class="result-card-header">
+            <div class="result-header-left">
+              <div class="result-header-abbr">Rx</div>
+              <div>
+                <div class="result-header-title" id="prescriptionResultTitle">Prescription Information Report</div>
+                <div class="result-header-sub">Educational &mdash; Consult Your Prescriber for Personal Advice</div>
+              </div>
+            </div>
+            <div class="result-actions">
+              <button class="result-action-btn result-copy-btn" aria-label="Copy">Copy</button>
+              <button class="result-action-btn result-tts-btn" aria-label="Read aloud">Read Aloud</button>
+              <button class="result-action-btn result-pdf-btn" aria-label="Export PDF">Export PDF</button>
+            </div>
+          </div>
+          <div class="result-meta-bar" id="prescriptionResultMeta"></div>
+          <div class="result-body"><div class="md-content" id="prescriptionResultBody"></div></div>
+        </div>
+      </section>
+
+      <!-- ================================================================
+           PAGE: HEALTH TIPS
+           ================================================================ -->
+      <section class="page" id="page-healthtips" aria-labelledby="healthtips-h1">
+        <div class="page-header">
+          <div class="page-header-meta">
+            <span class="page-section-tag">Clinical Tool &mdash; Ws</span>
+          </div>
+          <h1 id="healthtips-h1">Health Tips Generator</h1>
+          <p>Select a wellness category from the options below to receive a comprehensive, evidence-based health guide covering daily routines, nutrition, physical activity, hydration, sleep hygiene, and lifestyle modifications specific to that health domain.</p>
+        </div>
+
+        <div class="disclaimer-panel" role="note">
+          <div class="disclaimer-icon">
+            <svg viewBox="0 0 20 20"><path d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"/></svg>
+          </div>
+          <p class="disclaimer-text">
+            <strong>Disclaimer:</strong> Wellness advice is general and educational. Individual needs vary. Consult a qualified healthcare professional before making significant changes to your diet, exercise, or lifestyle — particularly if you have existing medical conditions.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-header-left">
+              <div class="card-icon">
+                <svg viewBox="0 0 24 24"><path d="M13.49 5.48c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-3.6 13.9l1-4.4 2.1 2v6h2v-7.5l-2.1-2 .6-3c1.3 1.5 3.3 2.5 5.5 2.5v-2c-1.9 0-3.5-1-4.3-2.4l-1-1.6c-.4-.6-1-1-1.7-1-.3 0-.5.1-.8.1l-5.2 2.2v4.7h2v-3.4l1.8-.7-1.6 8.1-4.9-1-.4 2 7 1.4z"/></svg>
+              </div>
+              <div>
+                <div class="card-title">Select a Wellness Category</div>
+                <div class="card-subtitle">Choose one category to generate a personalised, evidence-based health guide</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="category-grid" role="group" aria-label="Health categories">
+            <button class="category-btn" data-category="Weight Loss" aria-pressed="false">
+              <div class="category-abbr">WL</div>
+              Weight Loss
+            </button>
+            <button class="category-btn" data-category="Diabetes" aria-pressed="false">
+              <div class="category-abbr">DM</div>
+              Diabetes
+            </button>
+            <button class="category-btn" data-category="Heart Health" aria-pressed="false">
+              <div class="category-abbr">CV</div>
+              Heart Health
+            </button>
+            <button class="category-btn" data-category="Mental Health" aria-pressed="false">
+              <div class="category-abbr">MH</div>
+              Mental Health
+            </button>
+            <button class="category-btn" data-category="Nutrition" aria-pressed="false">
+              <div class="category-abbr">Nt</div>
+              Nutrition
+            </button>
+            <button class="category-btn" data-category="Sleep" aria-pressed="false">
+              <div class="category-abbr">Sl</div>
+              Sleep
+            </button>
+            <button class="category-btn" data-category="Exercise" aria-pressed="false">
+              <div class="category-abbr">Ex</div>
+              Exercise
+            </button>
+          </div>
+
+          <div style="padding: 10px 0 4px; font-size: 12px; color: var(--text-muted);" id="selectedCategoryLabel">
+            No category selected. Click a category above to select it.
+          </div>
+
+          <div class="form-actions">
+            <button class="btn btn-generate" type="button" id="healthtipsGenerate" aria-label="Generate health tips">
+              Generate Health Guide
+            </button>
+            <button class="btn btn-secondary" type="button" id="healthtipsReset" aria-label="Reset selection">
+              Reset Selection
+            </button>
+          </div>
+        </div>
+
+        <div class="loading-container" id="healthtipsLoading" role="status" aria-live="polite">
+          <div class="loading-spinner"></div>
+          <span class="loading-label">Generating wellness guide</span>
+          <span class="loading-sublabel">Compiling evidence-based recommendations, dietary guidelines, and lifestyle strategies for your selected category.</span>
+          <div class="loading-dots"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div>
+        </div>
+
+        <div class="result-card" id="healthtipsResult" role="region" aria-labelledby="healthtipsResultTitle" aria-live="polite">
+          <div class="result-card-header">
+            <div class="result-header-left">
+              <div class="result-header-abbr">Ws</div>
+              <div>
+                <div class="result-header-title" id="healthtipsResultTitle">Wellness Health Guide</div>
+                <div class="result-header-sub">Evidence-Based &mdash; Educational Recommendations</div>
+              </div>
+            </div>
+            <div class="result-actions">
+              <button class="result-action-btn result-copy-btn" aria-label="Copy">Copy</button>
+              <button class="result-action-btn result-tts-btn" aria-label="Read aloud">Read Aloud</button>
+              <button class="result-action-btn result-pdf-btn" aria-label="Export PDF">Export PDF</button>
+            </div>
+          </div>
+          <div class="result-meta-bar" id="healthtipsResultMeta"></div>
+          <div class="result-body"><div class="md-content" id="healthtipsResultBody"></div></div>
+        </div>
+      </section>
+
+      <!-- ================================================================
+           PAGE: MEDICAL REPORT SUMMARIZER
+           ================================================================ -->
+      <section class="page" id="page-report" aria-labelledby="report-h1">
+        <div class="page-header">
+          <div class="page-header-meta">
+            <span class="page-section-tag">Clinical Tool &mdash; Rp</span>
+          </div>
+          <h1 id="report-h1">Medical Report Summarizer</h1>
+          <p>Paste the text of any medical report — including blood work, radiology findings, pathology results, discharge summaries, or specialist letters — to receive a plain-language interpretation with highlighted abnormal values and a structured list of questions to raise with your clinician.</p>
+        </div>
+
+        <div class="disclaimer-panel" role="note">
+          <div class="disclaimer-icon">
+            <svg viewBox="0 0 20 20"><path d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"/></svg>
+          </div>
+          <p class="disclaimer-text">
+            <strong>Disclaimer:</strong> Report summaries are for educational purposes only. Do not act on AI interpretations without first consulting your treating physician. Abnormal values require professional clinical evaluation in the context of your complete medical history.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-header-left">
+              <div class="card-icon">
+                <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm4 18H6V4h7v5h5v11zM8 15h8v2H8zm0-4h8v2H8zm2-4H8v2h2V7z"/></svg>
+              </div>
+              <div>
+                <div class="card-title">Medical Report Input</div>
+                <div class="card-subtitle">Supports blood tests, radiology reports, pathology, discharge summaries, and specialist letters</div>
+              </div>
+            </div>
+          </div>
+
+          <form id="reportForm" novalidate aria-label="Medical report summarization form">
+            <div class="form-group">
+              <label class="form-label" for="reportText">
+                Medical Report Text <span class="required-mark">*</span>
+              </label>
+              <p class="form-helper">Copy and paste the full text of your medical report. Include all values, reference ranges, and clinical notes for the most accurate educational summary. Minimum 20 characters required.</p>
+              <div class="input-row">
+                <textarea class="form-textarea" id="reportText" name="report_text"
+                          placeholder="Paste the full text of your medical report here.&#10;&#10;Example (Complete Blood Count):&#10;&#10;Patient: John Doe | DOB: 01/01/1985 | Date: 15/07/2024&#10;&#10;HAEMATOLOGY REPORT&#10;Haemoglobin:         10.2 g/dL    [Reference: 13.5–17.5]   LOW&#10;White Blood Cells:   11,800/uL    [Reference: 4,500–11,000] HIGH&#10;Platelets:           190,000/uL   [Reference: 150,000–400,000] Normal&#10;MCV:                 72 fL        [Reference: 80–100]          LOW&#10;&#10;Interpretation: Mild microcytic anaemia with mild leukocytosis…"
+                          rows="12" required aria-required="true" maxlength="4000"></textarea>
+                <button class="voice-btn" type="button" id="voiceReport" title="Voice input" aria-label="Start voice input">&#127908;</button>
+              </div>
+              <div class="form-footer">
+                <span class="form-error-msg" role="alert"></span>
+                <span class="char-counter" id="reportCount" aria-live="polite">0 / 4000</span>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button class="btn btn-generate" type="button" id="reportGenerate" aria-label="Summarize medical report">
+                Generate Report Summary
+              </button>
+              <button class="btn btn-secondary" type="button" id="reportReset" aria-label="Clear form">
+                Reset Form
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div class="loading-container" id="reportLoading" role="status" aria-live="polite">
+          <div class="loading-spinner"></div>
+          <span class="loading-label">Analyzing medical report</span>
+          <span class="loading-sublabel">Processing report data, identifying key findings, and generating a patient-friendly summary with clinical context.</span>
+          <div class="loading-dots"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div>
+        </div>
+
+        <div class="result-card" id="reportResult" role="region" aria-labelledby="reportResultTitle" aria-live="polite">
+          <div class="result-card-header">
+            <div class="result-header-left">
+              <div class="result-header-abbr">Rp</div>
+              <div>
+                <div class="result-header-title" id="reportResultTitle">Medical Report Summary</div>
+                <div class="result-header-sub">Simplified &mdash; Educational Interpretation Only</div>
+              </div>
+            </div>
+            <div class="result-actions">
+              <button class="result-action-btn result-copy-btn" aria-label="Copy">Copy</button>
+              <button class="result-action-btn result-tts-btn" aria-label="Read aloud">Read Aloud</button>
+              <button class="result-action-btn result-pdf-btn" aria-label="Export PDF">Export PDF</button>
+            </div>
+          </div>
+          <div class="result-meta-bar" id="reportResultMeta"></div>
+          <div class="result-body"><div class="md-content" id="reportResultBody"></div></div>
+        </div>
+      </section>
+
+      <!-- ================================================================
+           PAGE: EMERGENCY CHECKER
+           ================================================================ -->
+      <section class="page" id="page-emergency" aria-labelledby="emergency-h1">
+        <div class="page-header">
+          <div class="page-header-meta">
+            <span class="page-section-tag" style="background:var(--red-50);color:var(--red-700);border-color:var(--red-100);">Critical Tool &mdash; ER</span>
+          </div>
+          <h1 id="emergency-h1">Emergency Checker</h1>
+          <p>Describe your current symptoms to receive an educational risk level classification — Low, Medium, High, or Emergency — with clinical reasoning, immediate action steps, and emergency services guidance where appropriate. This tool does not replace emergency medical care.</p>
+        </div>
+
+        <!-- Critical Warning -->
+        <div class="disclaimer-panel disclaimer-emergency" role="alert">
+          <div class="disclaimer-icon">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="10" cy="10" r="8"/><line x1="10" y1="6" x2="10" y2="10"/><circle cx="10" cy="14" r="0.5" fill="currentColor"/></svg>
+          </div>
+          <p class="disclaimer-text">
+            <strong>Critical Notice:</strong> If you are currently experiencing chest pain, difficulty breathing, loss of consciousness, uncontrolled bleeding, stroke symptoms, or any other life-threatening condition — <strong>call emergency services (911 or your local equivalent) immediately.</strong> Do not wait for AI assessment.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-header-left">
+              <div class="card-icon" style="background:var(--red-50);border-color:var(--red-100);">
+                <svg viewBox="0 0 24 24" style="fill:var(--red-700)"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+              </div>
+              <div>
+                <div class="card-title">Symptom Risk Assessment</div>
+                <div class="card-subtitle">Provide a detailed description of all current symptoms for the most accurate risk classification</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Risk Level Legend -->
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:18px;padding:14px;background:var(--gray-50);border:1px solid var(--border);border-radius:var(--radius-sm);">
+            <div style="text-align:center;padding:8px;">
+              <div style="font-size:11px;font-weight:700;color:var(--green-600);background:var(--green-100);padding:3px 8px;border-radius:99px;display:inline-block;margin-bottom:4px;">LOW</div>
+              <div style="font-size:11px;color:var(--text-muted);">Self-care, monitor</div>
+            </div>
+            <div style="text-align:center;padding:8px;">
+              <div style="font-size:11px;font-weight:700;color:var(--amber-700);background:var(--amber-100);padding:3px 8px;border-radius:99px;display:inline-block;margin-bottom:4px;">MEDIUM</div>
+              <div style="font-size:11px;color:var(--text-muted);">See a doctor today</div>
+            </div>
+            <div style="text-align:center;padding:8px;">
+              <div style="font-size:11px;font-weight:700;color:var(--red-700);background:var(--red-100);padding:3px 8px;border-radius:99px;display:inline-block;margin-bottom:4px;">HIGH</div>
+              <div style="font-size:11px;color:var(--text-muted);">Go to ER promptly</div>
+            </div>
+            <div style="text-align:center;padding:8px;">
+              <div style="font-size:11px;font-weight:700;color:white;background:var(--red-700);padding:3px 8px;border-radius:99px;display:inline-block;margin-bottom:4px;">EMERGENCY</div>
+              <div style="font-size:11px;color:var(--text-muted);">Call 911 now</div>
+            </div>
+          </div>
+
+          <form id="emergencyForm" novalidate aria-label="Emergency symptom checker form">
+            <div class="form-group">
+              <label class="form-label" for="emergencySymptoms">
+                Current Symptoms <span class="required-mark">*</span>
+              </label>
+              <p class="form-helper">Describe all symptoms you are currently experiencing. Include onset time, severity, location, character of pain, and any associated symptoms. The more detail provided, the more accurate the risk classification.</p>
+              <div class="input-row">
+                <textarea class="form-textarea" id="emergencySymptoms" name="symptoms"
+                          placeholder="Describe your current symptoms in as much detail as possible.&#10;&#10;Example: Sudden onset severe crushing chest pain radiating to the left arm and jaw, started approximately 20 minutes ago. Accompanied by shortness of breath, profuse sweating, nausea, and dizziness. No history of cardiac disease. Age 54, male, smoker."
+                          rows="6" required aria-required="true" maxlength="2000"></textarea>
+                <button class="voice-btn" type="button" id="voiceEmergency" title="Voice input" aria-label="Start voice input">&#127908;</button>
+              </div>
+              <div class="form-footer">
+                <span class="form-error-msg" role="alert"></span>
+                <span class="char-counter" id="emergencyCount" aria-live="polite">0 / 2000</span>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button class="btn btn-danger" type="button" id="emergencyGenerate" aria-label="Assess emergency risk">
+                Assess Emergency Risk
+              </button>
+              <button class="btn btn-secondary" type="button" id="emergencyReset" aria-label="Clear form">
+                Reset Form
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div class="loading-container" id="emergencyLoading" role="status" aria-live="polite">
+          <div class="loading-spinner" style="border-top-color:var(--red-700);"></div>
+          <span class="loading-label">Assessing risk level</span>
+          <span class="loading-sublabel">Evaluating symptom patterns against clinical triage criteria. If this is a genuine emergency, do not wait — call emergency services now.</span>
+          <div class="loading-dots"><div class="loading-dot" style="background:var(--red-700);"></div><div class="loading-dot" style="background:var(--red-700);"></div><div class="loading-dot" style="background:var(--red-700);"></div></div>
+        </div>
+
+        <div class="result-card" id="emergencyResult" role="region" aria-labelledby="emergencyResultTitle" aria-live="polite">
+          <div class="result-card-header danger-header">
+            <div class="result-header-left">
+              <div class="result-header-abbr">ER</div>
+              <div>
+                <div class="result-header-title" id="emergencyResultTitle">Emergency Risk Assessment</div>
+                <div class="result-header-sub">Educational &mdash; Not a Clinical Diagnosis &mdash; Not a Substitute for Emergency Care</div>
+              </div>
+            </div>
+            <div class="result-actions">
+              <button class="result-action-btn result-copy-btn" aria-label="Copy">Copy</button>
+              <button class="result-action-btn result-tts-btn" aria-label="Read aloud">Read Aloud</button>
+              <button class="result-action-btn result-pdf-btn" aria-label="Export PDF">Export PDF</button>
+            </div>
+          </div>
+          <div class="result-meta-bar" id="emergencyResultMeta"></div>
+          <div class="result-body"><div class="md-content" id="emergencyResultBody"></div></div>
+        </div>
+      </section>
+
+      <!-- ================================================================
+           PAGE: ABOUT
+           ================================================================ -->
+      <section class="page" id="page-about" aria-labelledby="about-h1">
+        <div class="page-header">
+          <div class="page-header-meta">
+            <span class="page-section-tag">Information &mdash; Ab</span>
+          </div>
+          <h1 id="about-h1">About Healthcare AI</h1>
+          <p>Technical overview, capabilities, technology stack, and compliance information for the Healthcare AI Clinical Assistant platform.</p>
+        </div>
+
+        <div class="about-grid">
+          <div style="display:flex;flex-direction:column;gap:18px;">
+
+            <div class="card">
+              <div class="card-header">
+                <div class="card-header-left">
+                  <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg></div>
+                  <div class="card-title">Platform Overview</div>
+                </div>
+              </div>
+              <p style="font-size:14px;line-height:1.7;margin-bottom:12px;">The <strong>Healthcare AI Clinical Assistant</strong> is a production-grade AI-powered educational platform designed to bridge the gap between complex medical information and patient understanding. Powered by the <strong>Grok API</strong> (xAI), it provides structured educational insights across six core clinical domains.</p>
+              <p style="font-size:14px;line-height:1.7;">The platform is designed for patients, caregivers, healthcare students, and health-conscious individuals who require clear, accessible medical information without the barriers of clinical jargon — while consistently directing users to qualified healthcare professionals for personal medical decisions.</p>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <div class="card-header-left">
+                  <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg></div>
+                  <div class="card-title">Platform Capabilities</div>
+                </div>
+              </div>
+              <ul class="about-feature-list">
+                <li><div class="feature-dot"></div>Symptom analysis with urgency classification and specialist referral guidance</li>
+                <li><div class="feature-dot"></div>Medical terminology explanation in plain, patient-accessible language</li>
+                <li><div class="feature-dot"></div>Prescription and pharmacological information including safety warnings</li>
+                <li><div class="feature-dot"></div>Evidence-based wellness guides across 7 health categories</li>
+                <li><div class="feature-dot"></div>Medical report interpretation with abnormal value flagging</li>
+                <li><div class="feature-dot"></div>Four-level emergency risk classification (Low / Medium / High / Emergency)</li>
+                <li><div class="feature-dot"></div>Voice input via browser Speech Recognition API</li>
+                <li><div class="feature-dot"></div>Text-to-speech output for accessibility</li>
+                <li><div class="feature-dot"></div>PDF export of all AI-generated responses</li>
+                <li><div class="feature-dot"></div>Dark and light theme with system preference detection</li>
+                <li><div class="feature-dot"></div>Full keyboard shortcut navigation</li>
+                <li><div class="feature-dot"></div>LocalStorage-based conversation history</li>
+                <li><div class="feature-dot"></div>Fully responsive design supporting mobile and desktop</li>
+              </ul>
+            </div>
+
+            <div class="card" style="border-left:4px solid var(--red-700);">
+              <div class="card-header">
+                <div class="card-header-left">
+                  <div class="card-icon" style="background:var(--red-50);border-color:var(--red-100);">
+                    <svg viewBox="0 0 24 24" style="fill:var(--red-700)"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+                  </div>
+                  <div class="card-title" style="color:var(--red-700);">Medical Disclaimer</div>
+                </div>
+              </div>
+              <p style="font-size:14px;font-weight:600;margin-bottom:10px;color:var(--text-heading);">This AI assistant is for educational purposes only and is NOT a substitute for professional medical advice, diagnosis, or treatment.</p>
+              <p style="font-size:13.5px;color:var(--text-body);line-height:1.7;margin-bottom:10px;">Always seek the advice of a qualified physician or other licensed healthcare provider with any questions you may have regarding a medical condition, symptom, or medication. Never disregard professional medical advice or delay seeking it because of information obtained from this application.</p>
+              <p style="font-size:13.5px;font-weight:700;color:var(--red-700);">If you are experiencing a medical emergency, call 911 or your local emergency services immediately. Do not rely on AI assessment in emergency situations.</p>
+            </div>
+
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:18px;">
+
+            <div class="card">
+              <div class="card-header">
+                <div class="card-header-left">
+                  <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/></svg></div>
+                  <div class="card-title">Technology Stack</div>
+                </div>
+              </div>
+              <p style="font-size:11.5px;color:var(--text-muted);margin-bottom:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;">Backend</p>
+              <div class="tech-stack" style="margin-bottom:14px;">
+                <span class="tech-pill">Python 3.11+</span>
+                <span class="tech-pill">FastAPI 0.115+</span>
+                <span class="tech-pill">Uvicorn</span>
+                <span class="tech-pill">Pydantic v2</span>
+                <span class="tech-pill">httpx</span>
+                <span class="tech-pill">python-dotenv</span>
+              </div>
+              <p style="font-size:11.5px;color:var(--text-muted);margin-bottom:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;">Frontend</p>
+              <div class="tech-stack" style="margin-bottom:14px;">
+                <span class="tech-pill">HTML5</span>
+                <span class="tech-pill">CSS3</span>
+                <span class="tech-pill">Vanilla JavaScript</span>
+                <span class="tech-pill">Web Speech API</span>
+                <span class="tech-pill">Web Storage API</span>
+              </div>
+              <p style="font-size:11.5px;color:var(--text-muted);margin-bottom:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;">AI Model</p>
+              <div class="tech-stack">
+                <span class="tech-pill">Grok API (xAI)</span>
+                <span class="tech-pill">grok-3-mini</span>
+                <span class="tech-pill">OpenAI-Compatible</span>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <div class="card-header-left">
+                  <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg></div>
+                  <div class="card-title">Security Design</div>
+                </div>
+              </div>
+              <ul class="about-feature-list">
+                <li><div class="feature-dot"></div>API key stored server-side in .env — never exposed to the browser</li>
+                <li><div class="feature-dot"></div>All inputs validated via Pydantic before reaching the AI layer</li>
+                <li><div class="feature-dot"></div>HTML tag stripping prevents XSS from user inputs</li>
+                <li><div class="feature-dot"></div>Request timeout and rate limit error handling</li>
+                <li><div class="feature-dot"></div>No user data stored on server — stateless architecture</li>
+              </ul>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <div class="card-header-left">
+                  <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M20 5H4v2l8 5 8-5V5zm0 4.236l-8 5-8-5V19h16V9.236z"/></svg></div>
+                  <div class="card-title">Keyboard Shortcuts</div>
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:4px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border-light);font-size:12.5px;color:var(--text-body);">
+                  <span>Toggle Dark Mode</span>
+                  <div style="display:flex;gap:3px;"><span class="kbd">Ctrl</span><span class="kbd">D</span></div>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border-light);font-size:12.5px;color:var(--text-body);">
+                  <span>Dashboard</span>
+                  <div style="display:flex;gap:3px;"><span class="kbd">Ctrl</span><span class="kbd">1</span></div>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border-light);font-size:12.5px;color:var(--text-body);">
+                  <span>Emergency Checker</span>
+                  <div style="display:flex;gap:3px;"><span class="kbd">Ctrl</span><span class="kbd">7</span></div>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:12.5px;color:var(--text-body);">
+                  <span>Show Shortcuts Panel</span>
+                  <div style="display:flex;gap:3px;"><span class="kbd">?</span></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <div class="card-header-left">
+                  <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M19 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2zm-2 10H7v-2h10v2z"/></svg></div>
+                  <div class="card-title">API Documentation</div>
+                </div>
+              </div>
+              <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">Interactive API documentation generated automatically by FastAPI:</p>
+              <a href="/docs" target="_blank" rel="noopener noreferrer"
+                 style="display:block;padding:10px 14px;background:var(--blue-50);border:1px solid var(--blue-100);border-radius:var(--radius-sm);font-size:13px;color:var(--blue-600);font-weight:600;transition:all 0.18s;margin-bottom:7px;">
+                Swagger UI &mdash; /docs &rarr;
+              </a>
+              <a href="/redoc" target="_blank" rel="noopener noreferrer"
+                 style="display:block;padding:10px 14px;background:var(--gray-50);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;color:var(--text-secondary);font-weight:600;transition:all 0.18s;">
+                ReDoc &mdash; /redoc &rarr;
+              </a>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer" role="contentinfo">
+      <div class="footer-left">
+        Healthcare AI Clinical Assistant &mdash; v1.0.0 &mdash; For Educational Use Only &mdash; &copy; 2025
+      </div>
+      <div class="footer-right">
+        <a class="footer-link" href="/docs" target="_blank" rel="noopener noreferrer">API Docs</a>
+        <a class="footer-link" href="/api/health" target="_blank" rel="noopener noreferrer">Health Check</a>
+        <a class="footer-link" href="#" onclick="navigate('about');return false;">About</a>
+      </div>
+    </footer>
+
+  </div><!-- /main-content -->
+</div><!-- /app-shell -->
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer" role="log" aria-live="polite" aria-label="Notifications"></div>
+
+<!-- Keyboard Shortcuts Dialog -->
+<div class="shortcuts-overlay" id="shortcutsPanel" role="dialog" aria-modal="true" aria-labelledby="shortcutsTitle">
+  <div class="shortcuts-backdrop" id="shortcutsBackdrop" aria-hidden="true"></div>
+  <div class="shortcuts-dialog">
+    <div class="shortcuts-dialog-title" id="shortcutsTitle">Keyboard Shortcuts</div>
+    <div class="shortcut-row"><span>Toggle Dark Mode</span><div class="shortcut-keys"><span class="kbd">Ctrl</span><span class="kbd">D</span></div></div>
+    <div class="shortcut-row"><span>Dashboard</span><div class="shortcut-keys"><span class="kbd">Ctrl</span><span class="kbd">1</span></div></div>
+    <div class="shortcut-row"><span>Symptom Analyzer</span><div class="shortcut-keys"><span class="kbd">Ctrl</span><span class="kbd">2</span></div></div>
+    <div class="shortcut-row"><span>Term Explainer</span><div class="shortcut-keys"><span class="kbd">Ctrl</span><span class="kbd">3</span></div></div>
+    <div class="shortcut-row"><span>Prescription</span><div class="shortcut-keys"><span class="kbd">Ctrl</span><span class="kbd">4</span></div></div>
+    <div class="shortcut-row"><span>Health Tips</span><div class="shortcut-keys"><span class="kbd">Ctrl</span><span class="kbd">5</span></div></div>
+    <div class="shortcut-row"><span>Report Summary</span><div class="shortcut-keys"><span class="kbd">Ctrl</span><span class="kbd">6</span></div></div>
+    <div class="shortcut-row"><span>Emergency Checker</span><div class="shortcut-keys"><span class="kbd">Ctrl</span><span class="kbd">7</span></div></div>
+    <div class="shortcut-row"><span>About</span><div class="shortcut-keys"><span class="kbd">Ctrl</span><span class="kbd">8</span></div></div>
+    <div class="shortcut-row"><span>Show / Hide This Panel</span><div class="shortcut-keys"><span class="kbd">?</span></div></div>
+    <div class="shortcut-row"><span>Close / Stop Speech</span><div class="shortcut-keys"><span class="kbd">Esc</span></div></div>
+    <div style="margin-top:18px;">
+      <button class="btn btn-secondary" onclick="document.getElementById('shortcutsPanel').classList.remove('visible')" style="width:100%;">Close</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+</body>
+</html>
