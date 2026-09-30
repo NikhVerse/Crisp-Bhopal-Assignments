@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Smart Personal Assistant - Tool Integration</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom CSS Styles -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Toast Notifications Container -->
+    <div id="toast-container"></div>
+
+    <!-- Main Dashboard Container -->
+    <div class="dashboard-container">
+        
+        <!-- Sidebar Navigation (Column 1) -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-container">
+                    <div class="logo-glow"></div>
+                    <i class="fa-solid fa-robot logo-icon"></i>
+                </div>
+                <div class="brand-details">
+                    <h1>Aegis AI</h1>
+                    <span>Smart Assistant v1.0</span>
+                </div>
+                <button class="mobile-close-btn" id="mobile-sidebar-close" title="Close Sidebar">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- New Chat Controller -->
+            <div class="new-chat-wrapper">
+                <button class="btn btn-gradient btn-full" id="new-chat-btn">
+                    <i class="fa-solid fa-plus"></i> New Conversation
+                </button>
+            </div>
+
+            <!-- Conversation History List -->
+            <div class="history-section">
+                <h3><i class="fa-solid fa-message"></i> Recent Chats</h3>
+                <div class="history-list" id="history-list">
+                    <!-- Dynamic chat sessions injected here -->
+                    <div class="history-empty">No conversations yet</div>
+                </div>
+            </div>
+
+            <!-- Sidebar Actions & Integration Status -->
+            <div class="sidebar-footer">
+                <!-- Google Calendar Authentication Card -->
+                <div class="auth-card" id="auth-card">
+                    <div class="auth-card-header">
+                        <i class="fa-brands fa-google auth-icon"></i>
+                        <span>Google Calendar</span>
+                    </div>
+                    <div class="auth-status-container" id="auth-status-container">
+                        <p class="status-text text-muted">Checking integration status...</p>
+                    </div>
+                </div>
+
+                <!-- Global Action Buttons -->
+                <div class="action-buttons">
+                    <button class="btn btn-danger btn-full" id="clear-chat-btn" title="Clear this chat history">
+                        <i class="fa-solid fa-trash-can"></i> Clear Conversation
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Chat Area Workspace (Column 2) -->
+        <main class="chat-workspace">
+            <header class="workspace-header">
+                <div class="header-left">
+                    <button class="mobile-toggle-btn" id="mobile-sidebar-toggle" title="Open Sidebar">
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
+                    <h2>Chat Arena</h2>
+                </div>
+                <div class="header-right">
+                    <button class="mobile-toggle-btn" id="mobile-widgets-toggle" title="Open Widgets">
+                        <i class="fa-solid fa-cloud-sun"></i>
+                    </button>
+                    <div class="status-indicator">
+                        <span class="pulse-dot"></span>
+                        <span id="backend-status">Backend Connected</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Chat Message Streams -->
+            <div class="messages-container" id="messages-container">
+                <!-- Initial Setup Quick-prompts View -->
+                <div class="welcome-screen" id="welcome-screen">
+                    <div class="welcome-icon-glow">
+                        <i class="fa-solid fa-robot"></i>
+                    </div>
+                    <h2>Welcome to Aegis Assistant</h2>
+                    <p>I am an intelligent AI Agent capable of checking real-time weather details and interacting directly with your Google Calendar schedule. Try selecting a template query below:</p>
+                    
+                    <div class="quick-prompts-grid">
+                        <div class="prompt-card" onclick="fillPrompt('What\'s the weather in Delhi?')">
+                            <i class="fa-solid fa-cloud-sun text-cyan"></i>
+                            <span>What's the weather in Delhi?</span>
+                        </div>
+                        <div class="prompt-card" onclick="fillPrompt('Can I go for a picnic in London tomorrow?')">
+                            <i class="fa-solid fa-umbrella text-purple"></i>
+                            <span>Can I go for a picnic in London tomorrow?</span>
+                        </div>
+                        <div class="prompt-card" onclick="fillPrompt('Show my upcoming meetings')">
+                            <i class="fa-solid fa-calendar-days text-pink"></i>
+                            <span>Show my upcoming meetings</span>
+                        </div>
+                        <div class="prompt-card" onclick="fillPrompt('Schedule a doctor appointment tomorrow at 4 PM')">
+                            <i class="fa-solid fa-notes-medical text-green"></i>
+                            <span>Schedule a doctor appointment tomorrow at 4 PM</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Message Query Input Bar -->
+            <div class="input-panel">
+                <!-- Chat Loading/Typing Indicator -->
+                <div class="typing-indicator-wrapper" id="typing-indicator-wrapper" style="display: none;">
+                    <div class="typing-bubble">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                    <span class="typing-text">Aegis AI is thinking...</span>
+                </div>
+
+                <div class="input-form">
+                    <input type="text" id="chat-input" placeholder="Type a message, ask about weather, or schedule a calendar meeting..." autocomplete="off">
+                    <button class="send-btn" id="send-btn" title="Send Message">
+                        <i class="fa-solid fa-paper-plane"></i>
+                    </button>
+                </div>
+                <div class="input-footer">
+                    <span>Powering your calendar & weather workflows with Groq Llama 3.3.</span>
+                </div>
+            </div>
+        </main>
+
+        <!-- Widgets Dashboard Panel (Column 3) -->
+        <aside class="widgets-panel" id="widgets-panel">
+            <div class="widgets-header">
+                <h2>Dashboard Overview</h2>
+                <button class="mobile-close-btn" id="mobile-widgets-close" title="Close Dashboard">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Weather Widget Card -->
+            <section class="widget-card weather-widget">
+                <div class="widget-card-header">
+                    <h3><i class="fa-solid fa-cloud-sun"></i> Weather Explorer</h3>
+                </div>
+                
+                <div class="weather-search-form">
+                    <input type="text" id="weather-search-input" placeholder="Search City Weather...">
+                    <button id="weather-search-btn"><i class="fa-solid fa-magnifying-glass"></i></button>
+                </div>
+
+                <!-- Weather Details Container (Initially shows a placeholder) -->
+                <div class="weather-widget-body" id="weather-widget-body">
+                    <div class="weather-placeholder">
+                        <i class="fa-solid fa-search"></i>
+                        <p>Search for a city weather details above, or ask the AI assistant directly.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Calendar Widget Card -->
+            <section class="widget-card calendar-widget">
+                <div class="widget-card-header">
+                    <h3><i class="fa-solid fa-calendar-days"></i> Today's Schedule</h3>
+                    <button class="refresh-btn" id="calendar-refresh-btn" title="Refresh Events">
+                        <i class="fa-solid fa-rotate"></i>
+                    </button>
+                </div>
+
+                <!-- Events agenda list -->
+                <div class="calendar-widget-body">
+                    <div id="calendar-events-container">
+                        <div class="calendar-placeholder">
+                            <i class="fa-solid fa-calendar-xmark text-muted"></i>
+                            <p>Connect Google Calendar to see your schedule here.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </aside>
+
+    </div>
+    
+    <!-- Custom JS Scripts -->
+    <script src="script.js"></script>
+</body>
+</html>

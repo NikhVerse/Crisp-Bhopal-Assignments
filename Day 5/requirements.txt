@@ -1,0 +1,16 @@
+fastapi
+uvicorn
+python-dotenv
+requests
+groq
+google-api-python-client
+google-auth
+google-auth-oauthlib
+google-auth-httplib2
+python-multipart
+jinja2
+aiofiles
+pydantic
+pydantic-settings
+sqlalchemy
+google-generativeai
