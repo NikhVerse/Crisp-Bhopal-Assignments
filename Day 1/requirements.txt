@@ -1,0 +1,2 @@
+# Day 1 utilized web-based LLM interfaces (ChatGPT/Gemini/Claude) for prompt engineering tests.
+# No local Python environment packages required for this module.
