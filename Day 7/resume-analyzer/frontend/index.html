@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Resume Analyzer - Ultimate ATS Audit Dashboard</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom Style Sheet -->
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <!-- Background Gradients -->
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
+    <div class="bg-glow bg-glow-3"></div>
+
+    <!-- Header Navigation -->
+    <header class="app-header">
+        <div class="header-container">
+            <div class="logo">
+                <i class="fa-solid fa-wand-magic-sparkles logo-icon"></i>
+                <span class="logo-text">CV<span class="gradient-text">Grok</span></span>
+            </div>
+            <nav class="nav-actions">
+                <button id="btn-history" class="btn btn-secondary btn-icon" title="Analysis History">
+                    <i class="fa-solid fa-history"></i>
+                    <span>History</span>
+                </button>
+                <button id="theme-toggle" class="btn btn-secondary btn-icon-only" title="Toggle Theme">
+                    <i class="fa-solid fa-sun icon-light"></i>
+                    <i class="fa-solid fa-moon icon-dark"></i>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- History Sidebar -->
+    <div id="sidebar-history" class="sidebar">
+        <div class="sidebar-header">
+            <h3><i class="fa-solid fa-clock-rotate-left"></i> Analysis History</h3>
+            <button id="btn-close-history" class="btn-close">&times;</button>
+        </div>
+        <div class="sidebar-content" id="history-list">
+            <!-- Dynamically populated from LocalStorage -->
+            <p class="empty-history-text">No previous analyses found.</p>
+        </div>
+        <div class="sidebar-footer">
+            <button id="btn-clear-history" class="btn btn-danger btn-sm">Clear History</button>
+        </div>
+    </div>
+    <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+    <main class="main-container">
+        
+        <!-- Notification / Fallback Banner -->
+        <div id="notice-banner" class="notice-banner hidden">
+            <div class="notice-icon">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <div class="notice-content">
+                <span class="notice-title">Running in Demo Fallback Mode</span>
+                <span class="notice-desc">Grok API Key not set or connection failed. Using local text extraction and heuristics. Set <code>GROK_API_KEY</code> in environment to unlock full AI audit.</span>
+            </div>
+            <button class="btn-close-notice" id="btn-close-notice">&times;</button>
+        </div>
+
+        <!-- 1. LANDING / UPLOAD SCREEN -->
+        <section id="section-landing" class="section-landing active-section">
+            <div class="hero-section">
+                <div class="hero-tag">Powered by Grok AI</div>
+                <h1 class="hero-title">Optimize Your Resume For <span class="gradient-text">ATS Algorithms</span></h1>
+                <p class="hero-subtitle">Upload your resume and receive instant, deeply structured ATS audits, scoring, formatting analysis, and keyword reports to double your interview rate.</p>
+            </div>
+
+            <!-- Upload Box Container -->
+            <div class="upload-container">
+                <div class="dropzone" id="dropzone">
+                    <input type="file" id="file-input" accept=".pdf" style="display: none;">
+                    <div class="dropzone-content">
+                        <div class="upload-icon-wrapper">
+                            <i class="fa-solid fa-file-pdf upload-icon"></i>
+                        </div>
+                        <h3>Drag & drop your resume PDF here</h3>
+                        <p>or</p>
+                        <button class="btn btn-primary" id="btn-browse">Browse Files</button>
+                        <div class="upload-limits">
+                            <span>Supported format: <strong>PDF only</strong></span>
+                            <span>•</span>
+                            <span>Max size: <strong>10MB</strong></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Processing States -->
+                <div class="processing-box hidden" id="processing-box">
+                    <div class="processing-header">
+                        <h4 id="processing-status-text">Uploading File...</h4>
+                        <span id="processing-percentage">0%</span>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar-fill" id="progress-bar-fill"></div>
+                    </div>
+                    <div class="spinner-container">
+                        <div class="spinner"></div>
+                        <div class="pulse-ring"></div>
+                    </div>
+                    <ul class="processing-steps">
+                        <li id="step-1" class="step active"><i class="fa-solid fa-circle-notch fa-spin step-icon"></i> Extracting resume text...</li>
+                        <li id="step-2" class="step"><i class="fa-solid fa-circle-notch step-icon"></i> Running syntactic parse...</li>
+                        <li id="step-3" class="step"><i class="fa-solid fa-circle-notch step-icon"></i> Grok AI semantic analysis...</li>
+                        <li id="step-4" class="step"><i class="fa-solid fa-circle-notch step-icon"></i> Generating visual dashboard...</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Feature Badges -->
+            <div class="features-grid">
+                <div class="feature-card">
+                    <i class="fa-solid fa-crosshairs feature-icon"></i>
+                    <h4>Keyword Analysis</h4>
+                    <p>Identify missing keywords and phrases ATS scanners seek.</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fa-solid fa-list-check feature-icon"></i>
+                    <h4>Improvement Checklist</h4>
+                    <p>Get a step-by-step checklist of formatting and layout tweaks.</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fa-solid fa-file-invoice feature-icon"></i>
+                    <h4>Professional PDF Export</h4>
+                    <p>Download a styled executive report of your findings.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. ANALYTICS DASHBOARD SCREEN -->
+        <section id="section-dashboard" class="section-dashboard hidden-section">
+            <div class="dashboard-header-actions">
+                <button class="btn btn-secondary btn-icon" id="btn-back">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    <span>Analyze New Resume</span>
+                </button>
+                <div class="header-right-btns">
+                    <button class="btn btn-secondary btn-icon" id="btn-copy-suggestions">
+                        <i class="fa-solid fa-copy"></i>
+                        <span>Copy Suggestions</span>
+                    </button>
+                    <button class="btn btn-primary btn-icon" id="btn-download-pdf">
+                        <i class="fa-solid fa-download"></i>
+                        <span>Download PDF Report</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Dashboard Grid Layout -->
+            <div class="dashboard-grid">
+                
+                <!-- COLUMN 1: MATCH METRICS -->
+                <div class="dash-column col-left">
+                    <!-- Score Card -->
+                    <div class="glass-card card-score">
+                        <h3 class="card-title">ATS Match Evaluation</h3>
+                        <div class="score-circle-wrapper">
+                            <svg class="score-ring" width="200" height="200">
+                                <circle class="score-ring-bg" cx="100" cy="100" r="85"></circle>
+                                <circle class="score-ring-fill" id="score-ring-fill" cx="100" cy="100" r="85" stroke-dasharray="534" stroke-dashoffset="534"></circle>
+                            </svg>
+                            <div class="score-inner">
+                                <span class="score-value" id="ats-score-text">0%</span>
+                                <span class="score-label">MATCH SCORE</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Bonus Metrics: Readability & Interview Probability -->
+                        <div class="bonus-metrics-grid">
+                            <div class="metric-progress-item">
+                                <div class="metric-info">
+                                    <span>Readability Score</span>
+                                    <strong id="readability-score-text">0%</strong>
+                                </div>
+                                <div class="metric-bar">
+                                    <div class="metric-bar-fill fill-blue" id="readability-bar-fill"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="metric-progress-item">
+                                <div class="metric-info">
+                                    <span>Interview Probability</span>
+                                    <strong id="interview-prob-text">0%</strong>
+                                </div>
+                                <div class="metric-bar">
+                                    <div class="metric-bar-fill fill-purple" id="interview-prob-fill"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Contact Details Card -->
+                    <div class="glass-card">
+                        <h3 class="card-title"><i class="fa-solid fa-id-card"></i> Candidate Profiles</h3>
+                        <div class="candidate-info-list">
+                            <div class="info-item">
+                                <span class="info-label"><i class="fa-solid fa-user"></i> Name</span>
+                                <span class="info-val" id="cand-name">N/A</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label"><i class="fa-solid fa-envelope"></i> Email</span>
+                                <span class="info-val" id="cand-email">N/A</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label"><i class="fa-solid fa-phone"></i> Phone</span>
+                                <span class="info-val" id="cand-phone">N/A</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label"><i class="fa-brands fa-linkedin"></i> LinkedIn</span>
+                                <span class="info-val" id="cand-linkedin">N/A</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label"><i class="fa-brands fa-github"></i> GitHub</span>
+                                <span class="info-val" id="cand-github">N/A</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Skill Distribution Charts Card -->
+                    <div class="glass-card card-charts">
+                        <div class="card-header-tabs">
+                            <h3 class="card-title"><i class="fa-solid fa-chart-pie"></i> Skill Insights</h3>
+                            <div class="chart-tabs">
+                                <button class="tab-btn active" data-chart="radar">Radar</button>
+                                <button class="tab-btn" data-chart="bar">Bar</button>
+                                <button class="tab-btn" data-chart="pie">Pie</button>
+                            </div>
+                        </div>
+                        <div class="chart-canvas-container">
+                            <canvas id="skillsRadarChart" class="chart-canvas active-canvas"></canvas>
+                            <canvas id="skillsBarChart" class="chart-canvas hidden-canvas"></canvas>
+                            <canvas id="skillsPieChart" class="chart-canvas hidden-canvas"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- COLUMN 2: ANALYSIS SECTIONS -->
+                <div class="dash-column col-right">
+                    
+                    <!-- Overview Summary Card -->
+                    <div class="glass-card">
+                        <h3 class="card-title"><i class="fa-solid fa-file-text"></i> Executive Summary</h3>
+                        <p class="summary-text" id="ats-summary-text">Analyzing executive summary...</p>
+                    </div>
+
+                    <!-- Strengths and Weaknesses -->
+                    <div class="strengths-weaknesses-container">
+                        <div class="glass-card card-strengths">
+                            <h3 class="card-title color-green"><i class="fa-solid fa-circle-check"></i> Strengths</h3>
+                            <ul class="bullet-list" id="strengths-list">
+                                <!-- Populated dynamically -->
+                            </ul>
+                        </div>
+                        <div class="glass-card card-weaknesses">
+                            <h3 class="card-title color-orange"><i class="fa-solid fa-circle-xmark"></i> Weaknesses</h3>
+                            <ul class="bullet-list" id="weaknesses-list">
+                                <!-- Populated dynamically -->
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Keyword Heatmap Card -->
+                    <div class="glass-card">
+                        <h3 class="card-title"><i class="fa-solid fa-fire"></i> Resume Keyword Heatmap</h3>
+                        <p class="card-subtitle">These keywords represent skills matched in your resume vs weights expected by ATS algorithms.</p>
+                        <div class="heatmap-container" id="keyword-heatmap">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Missing Keywords Card -->
+                    <div class="glass-card">
+                        <h3 class="card-title color-red"><i class="fa-solid fa-triangle-exclamation"></i> Critical Missing Keywords</h3>
+                        <p class="card-subtitle">ATS scanners filter resumes failing to declare these specific technical terms.</p>
+                        <div class="missing-keywords-wrapper" id="missing-keywords-list">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Resume Improvement Checklist -->
+                    <div class="glass-card">
+                        <h3 class="card-title"><i class="fa-solid fa-square-check"></i> Resume Improvement Checklist</h3>
+                        <p class="card-subtitle">Track your editing progress interactively as you correct issues.</p>
+                        <div class="checklist-container" id="improvement-checklist">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Actionable Optimization Tips -->
+                    <div class="glass-card card-tabs-wrapper">
+                        <div class="tips-tab-header">
+                            <button class="tips-tab-btn active" data-tab="formatting">Formatting Suggestions</button>
+                            <button class="tips-tab-btn" data-tab="grammar">Grammar & Style</button>
+                            <button class="tips-tab-btn" data-tab="career">Career Suggestions</button>
+                        </div>
+                        <div class="tips-tab-content">
+                            <div class="tips-pane active-pane" id="pane-formatting">
+                                <ul class="bullet-list" id="formatting-tips-list"></ul>
+                            </div>
+                            <div class="tips-pane" id="pane-grammar">
+                                <ul class="bullet-list" id="grammar-tips-list"></ul>
+                            </div>
+                            <div class="tips-pane" id="pane-career">
+                                <ul class="bullet-list" id="career-tips-list"></ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Interview Readiness -->
+                    <div class="glass-card card-interview-readiness">
+                        <h3 class="card-title"><i class="fa-solid fa-briefcase"></i> Interview Readiness & Strategy</h3>
+                        <p class="summary-text" id="interview-readiness-text">Interview preparation strategy...</p>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Global Footer -->
+    <footer class="app-footer">
+        <p>&copy; 2026 CVGrok AI Resume Analyzer. Built for high-efficiency applicant tracking success.</p>
+    </footer>
+
+    <!-- Custom JavaScript -->
+    <script src="script.js"></script>
+</body>
+</html>
