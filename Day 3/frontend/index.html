@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI PDF RAG Chatbot — Interactive QA</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- CSS Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Background Gradients -->
+    <div class="bg-gradient-glow blob-1"></div>
+    <div class="bg-gradient-glow blob-2"></div>
+
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-logo">
+                <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="16" y1="13" x2="8" y2="13"/>
+                    <line x1="16" y1="17" x2="8" y2="17"/>
+                    <polyline points="10 9 9 9 8 9"/>
+                </svg>
+                <div class="logo-text-group">
+                    <h1>Antigravity PDF Chat</h1>
+                    <span class="status-indicator-wrapper">
+                        <span class="status-dot disconnected" id="api-status-dot"></span>
+                        <span class="status-text" id="api-status-text">Connecting...</span>
+                    </span>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button id="btn-clear-chat" class="btn btn-secondary flex-center" title="Clear conversation history">
+                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                    <span>Clear Chat</span>
+                </button>
+                <button id="btn-reset-all" class="btn btn-danger flex-center" title="Delete database and clear all uploads">
+                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">
+                        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                        <polyline points="3 3 3 8 8 8"></polyline>
+                    </svg>
+                    <span>Reset App</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Workspace -->
+        <main class="workspace">
+            <!-- Sidebar: Upload Section -->
+            <section class="sidebar-section">
+                <div class="card upload-card glassmorphism">
+                    <div class="card-header">
+                        <h2>Document Source</h2>
+                        <p class="subtitle">Upload your PDF reference file to begin</p>
+                    </div>
+
+                    <!-- Drag and Drop Zone -->
+                    <div class="drop-zone" id="drop-zone">
+                        <input type="file" id="file-input" accept="application/pdf" class="file-input">
+                        <div class="drop-zone-content">
+                            <div class="upload-icon-wrapper">
+                                <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                    <polyline points="17 8 12 3 7 8"/>
+                                    <line x1="12" y1="3" x2="12" y2="15"/>
+                                </svg>
+                            </div>
+                            <h3>Drag & Drop PDF</h3>
+                            <p>or <span>browse your files</span></p>
+                            <span class="file-limits">PDF documents only</span>
+                        </div>
+                    </div>
+
+                    <!-- Uploading Progress and State -->
+                    <div class="upload-progress-wrapper hidden" id="upload-progress-container">
+                        <div class="progress-info">
+                            <span class="file-name-progress" id="progress-filename">filename.pdf</span>
+                            <span class="progress-percentage" id="progress-percentage">0%</span>
+                        </div>
+                        <div class="progress-bar-bg">
+                            <div class="progress-bar-fill" id="progress-bar-fill"></div>
+                        </div>
+                        <div class="upload-status-subtext" id="upload-status-subtext">Uploading file...</div>
+                    </div>
+
+                    <!-- Active File Info -->
+                    <div class="active-file-card hidden" id="active-file-container">
+                        <div class="active-file-icon">
+                            <svg viewBox="0 0 24 24" width="24" height="24" stroke="var(--primary-color)" stroke-width="2" fill="none">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                            </svg>
+                        </div>
+                        <div class="active-file-details">
+                            <h4 id="active-filename">document.pdf</h4>
+                            <p id="active-file-meta">52 chunks generated</p>
+                        </div>
+                        <button class="btn-remove-file" id="btn-remove-file" title="Remove PDF and DB">
+                            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.5" fill="none">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Guidance Card inside Sidebar -->
+                    <div class="guidance-card mt-auto">
+                        <div class="guidance-title">
+                            <svg viewBox="0 0 24 24" width="16" height="16" stroke="var(--secondary-color)" stroke-width="2.5" fill="none" class="info-icon">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                            <span>Strict QA Policy</span>
+                        </div>
+                        <p>This assistant answers questions <strong>exclusively</strong> using the content in the PDF. It will not hallucinate or use external search engines.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Chat Section -->
+            <section class="chat-section">
+                <div class="card chat-card glassmorphism">
+                    <!-- Chat Output Window -->
+                    <div class="chat-messages" id="chat-messages-container">
+                        <!-- Greeting Message -->
+                        <div class="message system-message">
+                            <div class="message-avatar">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                                    <path d="M12 2v2M8 5a4 4 0 0 1 8 0M16 11V7a4 4 0 0 0-8 0v4"/>
+                                </svg>
+                            </div>
+                            <div class="message-content">
+                                <p>Welcome to <strong>Antigravity PDF Chat</strong>!</p>
+                                <p>Please upload a PDF document on the left. Once processed, you can ask questions about its content here.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chat Bottom Bar Input -->
+                    <div class="chat-input-area">
+                        <form id="chat-form" class="chat-form">
+                            <textarea 
+                                id="chat-input" 
+                                class="chat-input" 
+                                placeholder="Upload a PDF to start chatting..." 
+                                rows="1" 
+                                disabled
+                            ></textarea>
+                            <button type="submit" id="btn-send" class="btn btn-primary btn-circle" disabled title="Send question">
+                                <svg class="send-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                                </svg>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div class="toast-container" id="toast-container"></div>
+    
+    <!-- JavaScript file -->
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+# Python virtual environment
+venv/
+.venv/
+env/
+ENV/
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment configuration
+.env
+
+# Chroma database persistent storage
+backend/vectorstore/
+vectorstore/
+
+# PDF Uploads storage
+backend/uploads/
+uploads/
+
+# IDE files
+.vscode/
+.idea/
+.gemini/
